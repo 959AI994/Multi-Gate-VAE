@@ -78,8 +78,11 @@ class Model(nn.Module):
         edge_index = G.edge_index
 
         node_state = torch.cat([hs, hf], dim=-1)
-        and_mask = G.gate.squeeze(1) == 1
-        not_mask = G.gate.squeeze(1) == 2
+        not_mask = G.gate.squeeze(1) == 2  # NOT门的掩码
+        and_mask = G.gate.squeeze(1) == 3  # AND门的掩码
+        or_mask = G.gate.squeeze(1) == 4   # OR门的掩码
+        maj_mask = G.gate.squeeze(1) == 1  # MAJ门的掩码
+        xor_mask = G.gate.squeeze(1) == 5  # XOR门的掩码
 
         for _ in range(self.num_rounds):
             for level in range(1, num_layers_f):
