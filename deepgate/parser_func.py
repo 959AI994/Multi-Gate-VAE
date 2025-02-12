@@ -39,7 +39,8 @@ class OrderedData(Data):
         else:
             return 0
 
-def parse_pyg_mlpgate(x, edge_index, y, num_gate_types=5):
+# Notice: 如果是xmg需要将num_gate_types设置成6，如果是mig就设置成5
+def parse_pyg_mlpgate(x, edge_index, y, num_gate_types=6):
     x_torch = construct_node_feature(x, num_gate_types)#对于每个节点的门的种类，生成one hot编码  torch.tensor([[0, 1, 0], [1, 0, 0]])
 
     # tt_pair_index = torch.tensor(tt_pair_index, dtype=torch.long)
