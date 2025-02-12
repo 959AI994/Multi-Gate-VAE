@@ -2,9 +2,9 @@
 We can use the code in this repository to extract embeddings of different modes, such as xag, mig, xmg, aig.
 
 ### Prompt
-（1）导入deepgate包
+（1）导入deepgate包 <br>
 export PYTHONPATH=~/multi_gate/multi_gate_2:$PYTHONPATH <br>
-（2）运行
+（2）运行 <br>
 cd examples/ <br>
 python -m torch.distributed.launch --nproc_per_node=2  train.py<br>
 
