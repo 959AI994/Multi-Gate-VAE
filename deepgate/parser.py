@@ -152,7 +152,7 @@ class AigParser():
         return graph        
         
 class BenchParser():
-    def __init__(self, gate_to_index={'PI': 0, 'AND': 1, 'NOT': 2}):
+    def __init__(self, gate_to_index = {'INPUT': 0, 'MAJ': 1, 'NOT': 2, 'AND': 3, 'OR': 4, 'XOR': 5}):
         self.gate_to_index = gate_to_index
         pass
     

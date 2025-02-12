@@ -84,10 +84,11 @@ class Model(nn.Module):
         edge_index = G.edge_index
 
         node_state = torch.cat([hs, hf], dim=-1)
-        not_mask = G.gate.squeeze(1) == 1  # NOT门的掩码
-        and_mask = G.gate.squeeze(1) == 2  # AND门的掩码
-        or_mask = G.gate.squeeze(1) == 3   # OR门的掩码
-        maj_mask = G.gate.squeeze(1) == 4  # MAJ门的掩码
+        not_mask = G.gate.squeeze(1) == 2  # NOT门的掩码
+        and_mask = G.gate.squeeze(1) == 3  # AND门的掩码
+        or_mask = G.gate.squeeze(1) == 4   # OR门的掩码
+        maj_mask = G.gate.squeeze(1) == 1  # MAJ门的掩码
+        xor_mask = G.gate.squeeze(1) == 5  # XOR门的掩码
         # pi_mask = G.gate.squeeze(1) == 5   # PI门的掩码
 
         for _ in range(self.num_rounds):
@@ -178,7 +179,6 @@ class Model(nn.Module):
         hf = node_embedding[:, self.dim_hidden:]
 
         return hs, hf
-
 
     def pred_prob(self, hf):
         prob = self.readout_prob(hf)
