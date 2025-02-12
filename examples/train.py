@@ -8,7 +8,7 @@ import os
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 # DATA_DIR = '/home/wjx/Xmg_gate/Xmg_gate/examples/data/train'
-DATA_DIR = '/home/wjx/npz/final_data/aig_npz'
+DATA_DIR = '/home/wjx/npz/final_data/xmg_npz'
 
 # DATA_DIR = '/home/wjx/python-deepgate/examples/data/train'
 if __name__ == '__main__':
