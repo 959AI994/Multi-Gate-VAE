@@ -1,9 +1,9 @@
 import numpy as np
 
 # 替换成你实际的 npz 文件路径
-file_path = '/home/wjx/Xmg_gate/Xmg_gate/examples/data/train/graphs.npz'
+# file_path = '/home/wjx/Xmg_gate/Xmg_gate/examples/data/train/graphs.npz'
 
-# file_path = '/home/wjx/python-deepgate/examples/data/train/graphs.npz'
+file_path = '/home/wjx/npz/final_data/aig_npz/graphs.npz'
 
 
 try:
