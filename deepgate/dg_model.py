@@ -14,7 +14,7 @@ from .arch.mlp_aggr import MlpAggr
 from .arch.tfmlp import TFMlpAggr
 from .arch.gcn_conv import AggConv
 
-class Model(nn.Module):
+class Aig_Model(nn.Module):
     '''
     Recurrent Graph Neural Networks for Circuits.
     '''
@@ -24,7 +24,7 @@ class Model(nn.Module):
                  enable_encode = True,
                  enable_reverse = False
                 ):
-        super(Model, self).__init__()
+        super(Aig_Model, self).__init__()
         
         # configuration
         self.num_rounds = num_rounds
@@ -79,10 +79,10 @@ class Model(nn.Module):
 
         node_state = torch.cat([hs, hf], dim=-1)
         not_mask = G.gate.squeeze(1) == 2  # NOT门的掩码
-        and_mask = G.gate.squeeze(1) == 3  # AND门的掩码
-        or_mask = G.gate.squeeze(1) == 4   # OR门的掩码
-        maj_mask = G.gate.squeeze(1) == 1  # MAJ门的掩码
-        xor_mask = G.gate.squeeze(1) == 5  # XOR门的掩码
+        and_mask = G.gate.squeeze(1) == 1  # AND门的掩码
+        # or_mask = G.gate.squeeze(1) == 4   # OR门的掩码
+        # maj_mask = G.gate.squeeze(1) == 1  # MAJ门的掩码
+        # xor_mask = G.gate.squeeze(1) == 5  # XOR门的掩码
 
         for _ in range(self.num_rounds):
             for level in range(1, num_layers_f):
@@ -127,10 +127,10 @@ class Model(nn.Module):
                 l_not_node = G.forward_index[layer_mask & not_mask]
                 if l_not_node.size(0) > 0:
                     not_edge_index, not_edge_attr = subgraph(l_not_node, edge_index, dim=1)
-                    print("layer_mask =", layer_mask)
-                    print("not_edge_index =", torch.tensor(and_edge_index, dtype=torch.float32).shape)
-                    print("not_edge_attr =", and_edge_attr)
-                    print("hs =", hs.shape)
+                    # print("layer_mask =", layer_mask)
+                    # print("not_edge_index =", torch.tensor(and_edge_index, dtype=torch.float32).shape)
+                    # print("not_edge_attr =", and_edge_attr)
+                    # print("hs =", hs.shape)
                     # Update structure hidden state
                     msg = self.aggr_not_strc(hs, not_edge_index, not_edge_attr)
                     not_msg = torch.index_select(msg, dim=0, index=l_not_node)

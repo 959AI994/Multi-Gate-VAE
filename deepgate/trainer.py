@@ -137,14 +137,15 @@ class Trainer():
         # print(is_rc)
         #//rc_loss = self.reg_loss(is_rc, batch['is_rc'])
         # Task 3: Functional Similarity 
-        # node_a = hf[batch['tt_pair_index'][0]]
-        # node_b = hf[batch['tt_pair_index'][1]]
-        # emb_dis = 1 - torch.cosine_similarity(node_a, node_b, eps=1e-8)
-        # emb_dis_z = zero_normalization(emb_dis)
-        # tt_dis_z = zero_normalization(batch['tt_dis'])
-        # func_loss = self.reg_loss(emb_dis_z, tt_dis_z)
+        node_a = hf[batch['tt_pair_index'][0]]
+        node_b = hf[batch['tt_pair_index'][1]]
+        emb_dis = 1 - torch.cosine_similarity(node_a, node_b, eps=1e-8)
+        emb_dis_z = zero_normalization(emb_dis)
+        tt_dis_z = zero_normalization(batch['tt_dis'])
+        func_loss = self.reg_loss(emb_dis_z, tt_dis_z)
         loss_status = {
             'prob_loss': prob_loss, 
+            'func_loss': func_loss
         }
         # 'rc_loss': rc_loss,
         # 'func_loss': func_loss
@@ -210,7 +211,7 @@ class Trainer():
                     batch_time.update(time.time() - time_stamp)
                     prob_loss_stats.update(loss_status['prob_loss'].item())
                     # rc_loss_stats.update(loss_status['rc_loss'].item())
-                    # func_loss_stats.update(loss_status['func_loss'].item())
+                    func_loss_stats.update(loss_status['func_loss'].item())
                     #acc = get_function_acc(batch, hf)
                     #acc_stats.update(acc)
                     if self.local_rank == 0:

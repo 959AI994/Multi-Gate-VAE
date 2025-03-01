@@ -14,10 +14,10 @@ class OrderedData(Data):
                  forward_level=None, forward_index=None, backward_level=None, backward_index=None):
         super().__init__()
         self.edge_index = edge_index
-        # self.tt_pair_index = tt_pair_index
+        self.tt_pair_index = tt_pair_index
         self.x = x
         self.y = y
-        # self.tt_dis = tt_dis
+        self.tt_dis = tt_dis
         self.forward_level = forward_level
         self.forward_index = forward_index
         self.backward_level = backward_level
@@ -40,14 +40,14 @@ class OrderedData(Data):
             return 0
 
 # Notice: 如果是xmg需要将num_gate_types设置成6，如果是mig就设置成5
-def parse_pyg_mlpgate(x, edge_index, y, num_gate_types=6):
+def parse_pyg_mlpgate(x, edge_index, y, tt_dis, tt_pair_index, num_gate_types=6):
     x_torch = construct_node_feature(x, num_gate_types)#对于每个节点的门的种类，生成one hot编码  torch.tensor([[0, 1, 0], [1, 0, 0]])
 
-    # tt_pair_index = torch.tensor(tt_pair_index, dtype=torch.long)
-    # tt_pair_index = tt_pair_index.t().contiguous()
+    tt_pair_index = torch.tensor(tt_pair_index, dtype=torch.long)
+    tt_pair_index = tt_pair_index.t().contiguous()
     # rc_pair_index = torch.tensor(rc_pair_index, dtype=torch.long)
     # rc_pair_index = rc_pair_index.t().contiguous()
-    # tt_dis = torch.tensor(tt_dis)
+    tt_dis = torch.tensor(tt_dis)
     # is_rc = torch.tensor(is_rc, dtype=torch.float32).unsqueeze(1)
 
     edge_index = torch.tensor(edge_index, dtype=torch.long)
@@ -62,7 +62,7 @@ def parse_pyg_mlpgate(x, edge_index, y, num_gate_types=6):
         edge_index = edge_index.t().contiguous()
         forward_level, forward_index, backward_level, backward_index = return_order_info(edge_index, x_torch.size(0))
 
-    graph = OrderedData(x=x_torch, edge_index=edge_index, y = y,
+    graph = OrderedData(x=x_torch, edge_index=edge_index, y = y, tt_pair_index=tt_pair_index, tt_dis=tt_dis,
                         forward_level=forward_level, forward_index=forward_index, 
                         backward_level=backward_level, backward_index=backward_index)
     graph.use_edge_attr = False
