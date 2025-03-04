@@ -72,21 +72,27 @@ class NpzParser():
             data_list = []
             tot_pairs = 0
             circuits = read_npz_file(self.circuit_path)['circuits'].item()
+            # if not aig then: 
             labels = read_npz_file(self.label_path)['labels'].item()
             j = 0
 
             for cir_idx, cir_name in enumerate(circuits):
                 if cir_name != "D_FF_0" and cir_name != "register_cc" and cir_name != "D_FF_1" and cir_name != "Main_led_brightness_control_PWM" and cir_name != "ProgramCounter" and cir_name != "TenHertz" and cir_name != "dlatch":
                     print('Parse circuit: {}, {:} / {:} = {:.2f}%'.format(cir_name, cir_idx, len(circuits), cir_idx / len(circuits) * 100))
+                    #--------------------if model type = aig exchange "circuits" with "labels"--------------------
+                    # x = circuits[cir_name]["x"]
+                    # edge_index = circuits[cir_name]["edge_index"]
+                    # tt_dis = circuits[cir_name]['tt_sim']#in aig_graphs there is no tt_dis but tt_sim
+                    # tt_pair_index = circuits[cir_name]['tt_pair_index']
+                    # prob = circuits[cir_name]['prob']
+
+                    #---------------------------------------------------------------------------------------------
                     x = circuits[cir_name]["x"]
                     edge_index = circuits[cir_name]["edge_index"]
-
                     tt_dis = labels[cir_name]['tt_dis']
                     tt_pair_index = labels[cir_name]['tt_pair_index']
-                    prob =labels[cir_name]['prob']
-                    
-                    # rc_pair_index = labels[cir_name]['rc_pair_index']
-                    # is_rc = labels[cir_name]['is_rc']
+                    prob = labels[cir_name]['prob']
+
 
                     if len(tt_pair_index) == 0 :
                         print('No tt or rc pairs: ', cir_name)
@@ -99,6 +105,7 @@ class NpzParser():
                     graph = parse_pyg_mlpgate(
                         x, edge_index, prob, tt_dis, tt_pair_index 
                     )
+                    # graph.gate = torch.tensor(circuits[cir_name]['gate's])
                     graph.name = cir_name
                     data_list.append(graph)
                     #print("data_list =", len(data_list)) 

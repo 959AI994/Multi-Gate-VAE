@@ -64,7 +64,7 @@ class Aig_Model(nn.Module):
         # initialize the structure hidden state
         if self.enable_encode:
             hs = torch.zeros(num_nodes, self.dim_hidden)
-            hs = generate_hs_init(G, hs, self.dim_hidden, aig=True)
+            hs = generate_hs_init(G, hs, self.dim_hidden)
         else:
             hs = torch.zeros(num_nodes, self.dim_hidden)
         
@@ -150,6 +150,8 @@ class Aig_Model(nn.Module):
         node_embedding = node_state.squeeze(0)
         hs = node_embedding[:, :self.dim_hidden]
         hf = node_embedding[:, self.dim_hidden:]
+        print("[debug] hs:", hs)
+        print("[debug] hf:", hf)
 
           # debug
         # print(f"hs.shape: {hs.shape}")

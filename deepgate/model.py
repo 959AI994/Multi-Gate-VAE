@@ -187,6 +187,8 @@ class Model(nn.Module):
         node_embedding = node_state.squeeze(0)
         hs = node_embedding[:, :self.dim_hidden]
         hf = node_embedding[:, self.dim_hidden:]
+        print("hs =", hs)
+        print("hf =", hf)
 
         return hs, hf
     

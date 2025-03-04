@@ -19,7 +19,7 @@ class Trainer():
                  training_id = 'default',
                  save_dir = './exp', 
                  lr = 1e-4,
-                 prob_rc_func_weight = [3.0, 1.0, 2.0],
+                 prob_rc_func_weight = [3.0, 0.0, 2.0],
                  emb_dim = 128, 
                  device = 'cpu', 
                  batch_size=32, num_workers=0, 
@@ -197,10 +197,10 @@ class Trainer():
                     time_stamp = time.time()
                     # Get loss
                     hs, hf, loss_status = self.run_batch(batch)
-                    loss = loss_status['prob_loss'] * self.prob_rc_func_weight[0] 
-                    #+ \
+                    loss = loss_status['prob_loss'] * self.prob_rc_func_weight[0] + \
+                    loss_status['func_loss'] * self.prob_rc_func_weight[2]
                     #     loss_status['rc_loss'] * self.prob_rc_func_weight[1] + \
-                    #     loss_status['func_loss'] * self.prob_rc_func_weight[2]
+                   
                     loss /= sum(self.prob_rc_func_weight)
                     loss = loss.mean()
                     if phase == 'train':
@@ -217,6 +217,7 @@ class Trainer():
                     if self.local_rank == 0:
                         Bar.suffix = '[{:}/{:}]|Tot: {total:} |ETA: {eta:} '.format(iter_id, len(dataset), total=bar.elapsed_td, eta=bar.eta_td)
                         Bar.suffix += '|Prob: {:.4f} '.format(prob_loss_stats.avg)
+                        Bar.suffix += '|Func: {:.4f} '.format(func_loss_stats.avg)
                         # Bar.suffix += '|Acc: {:.2f}%% '.format(acc*100)
                         Bar.suffix += '|Net: {:.2f}s '.format(batch_time.avg)
                         bar.next()
