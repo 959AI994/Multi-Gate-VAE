@@ -150,8 +150,8 @@ class Aig_Model(nn.Module):
         node_embedding = node_state.squeeze(0)
         hs = node_embedding[:, :self.dim_hidden]
         hf = node_embedding[:, self.dim_hidden:]
-        print("[debug] hs:", hs)
-        print("[debug] hf:", hf)
+        # print("[debug] hs:", hs)
+        # print("[debug] hf:", hf)
 
           # debug
         # print(f"hs.shape: {hs.shape}")

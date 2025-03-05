@@ -139,7 +139,7 @@ class Trainer():
         # Task 3: Functional Similarity 
         node_a = hf[batch['tt_pair_index'][0]]
         node_b = hf[batch['tt_pair_index'][1]]
-        emb_dis = torch.cosine_similarity(node_a, node_b, eps=1e-8)
+        emb_dis = 1 - torch.cosine_similarity(node_a, node_b, eps=1e-8)
         emb_dis_z = zero_normalization(emb_dis)
         tt_dis_z = zero_normalization(batch['tt_sim'])
         func_loss = self.reg_loss(emb_dis_z, tt_dis_z)
