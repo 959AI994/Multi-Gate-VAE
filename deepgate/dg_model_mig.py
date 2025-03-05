@@ -51,7 +51,7 @@ class Model(nn.Module):
         self.update_and_strc = GRU(self.dim_hidden, self.dim_hidden)
         self.update_and_func = GRU(self.dim_hidden, self.dim_hidden)
         self.update_not_strc = GRU(self.dim_hidden, self.dim_hidden)
-        # self.update_not_func = GRU(self.dim_hidden, self.dim_hidden)
+        self.update_not_func = GRU(self.dim_hidden, self.dim_hidden)
         
         self.update_or_strc = GRU(self.dim_hidden, self.dim_hidden)
         self.update_or_func = GRU(self.dim_hidden, self.dim_hidden)

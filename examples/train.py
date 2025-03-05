@@ -8,12 +8,12 @@ import os
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 # DATA_DIR = '/home/wjx/Xmg_gate/Xmg_gate/examples/data/train'
-DATA_DIR = '/home/jwt/DeepGate2_mig/mig_data/train'
+DATA_DIR = '/home/wjx/npz/final_data/newest_npz/newest_npz_tt/mig_data/train'
 
 # DATA_DIR = '/home/wjx/python-deepgate/examples/data/train'
 if __name__ == '__main__':
-    circuit_path = os.path.join(DATA_DIR, 'graphs.npz')
-    label_path = os.path.join(DATA_DIR, 'labels.npz')
+    circuit_path = os.path.join(DATA_DIR, 'graphs_mig.npz')
+    label_path = os.path.join(DATA_DIR, 'labels_mig.npz')
     num_epochs = 60
     
     print('[INFO] Parse Dataset')
