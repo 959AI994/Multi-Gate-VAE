@@ -7,11 +7,11 @@ import torch
 import os
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
-DATA_DIR = './data/train/'
+DATA_DIR = '/home/xqgrp/wangjingxin/datasets/mixgate_data/4npz/aig_npz/'
 
 if __name__ == '__main__':
     circuit_path = os.path.join(DATA_DIR, 'graphs.npz')
-    label_path = os.path.join(DATA_DIR, 'labels.npz')
+    label_path = os.path.join(DATA_DIR, 'graphs.npz')
     num_epochs = 60
     
     print('[INFO] Parse Dataset')

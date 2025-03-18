@@ -11,11 +11,11 @@ import deepgate.digae_model
 import deepgate.digvae_model
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
-DATA_DIR = './data/train/'
+DATA_DIR = '/home/xqgrp/wangjingxin/datasets/mixgate_data/4npz/aig_npz/'
 
 if __name__ == '__main__':
     circuit_path = os.path.join(DATA_DIR, 'graphs.npz')
-    label_path = os.path.join(DATA_DIR, 'labels.npz')
+    label_path = os.path.join(DATA_DIR, 'graphs.npz')
     args = get_parse_args()
     
     print('[INFO] Parse Dataset')
