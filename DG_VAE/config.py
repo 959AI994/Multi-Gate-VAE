@@ -11,7 +11,7 @@ def get_parse_args():
         'DG_VAE', 'DG_AE', 'AE'
     ])
     parser.add_argument('--dim_hidden', type=int, default=64, help='Dimension of hidden layer')
-    parser.add_argument('--dim_feature', type=int, default=3, help='Dimension of input feature')
+    parser.add_argument('--dim_feature', type=int, default=6, help='Dimension of input feature')
     parser.add_argument('--s_rounds', type=int, default=4, help='Number of rounds for source node')
     parser.add_argument('--t_rounds', type=int, default=4, help='Number of rounds for target node')
     parser.add_argument('--layernorm', action='store_true', help='Enable layernorm')

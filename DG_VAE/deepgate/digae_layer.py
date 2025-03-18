@@ -237,6 +237,8 @@ class MultiGCNEncoder(nn.Module):
         self.num_rounds = num_rounds
         self.enable_reverse = enable_reverse 
         self.layernorm = layernorm
+        # 添加属性定义
+        self.dim_feature = dim_feature
 
         # dimensions
         self.dim_hidden = dim_hidden
@@ -269,6 +271,52 @@ class MultiGCNEncoder(nn.Module):
                     node_state = self.ln(node_state)
             
         return node_state.squeeze(0)
+    # def forward(self, x, edge_index):
+    #     device = next(self.parameters()).device
+    #     num_nodes = len(x)
+    #     # 初始化验证
+    #     print(f'[DEBUG] 输入x维度: {x.shape} (应显示[{num_nodes}, {self.dim_feature}])')
+        
+    #     node_state = torch.ones(1, num_nodes, self.dim_hidden).to(device)
+    #     print(f'[DEBUG] 初始node_state维度: {node_state.shape} (应显示[1, {num_nodes}, {self.dim_hidden}])')
+        
+    #     r_edge_index = torch.stack([edge_index[1], edge_index[0]], dim=0)
+        
+    #     for i in range(self.num_rounds):
+    #         # 正向传播部分
+    #         msg = self.aggr(node_state, edge_index)
+    #         print(f'[DEBUG] 第{i}轮正向msg维度: {msg.shape} (应显示[1, {num_nodes}, {self.dim_hidden}])')
+            
+    #         x_unsqueezed = x.unsqueeze(0)
+    #         print(f'[DEBUG] 第{i}轮特征x扩展维度: {x_unsqueezed.shape} (应显示[1, {num_nodes}, {self.dim_feature}])')
+            
+    #         concat = torch.cat([msg, x_unsqueezed], dim=-1)
+    #         print(f'[DEBUG] 第{i}轮拼接后维度: {concat.shape} (应显示[1, {num_nodes}, {self.dim_hidden + self.dim_feature}])')
+            
+    #         # GRU参数验证
+    #         print(f'[DEBUG] GRU预期input_size: {self.update.input_size} (应显示{self.dim_hidden + self.dim_feature})')
+    #         print(f'[DEBUG] GRU实际输入维度: {concat.size(-1)}')
+            
+    #         _, node_state = self.update(concat, node_state)
+    #         if self.layernorm:
+    #             node_state = self.ln(node_state)
+            
+    #         # 反向传播部分
+    #         if self.enable_reverse:
+    #             msg_r = self.aggr_r(node_state, r_edge_index)
+    #             print(f'[DEBUG] 第{i}轮反向msg维度: {msg_r.shape} (应显示[1, {num_nodes}, {self.dim_hidden}])')
+                
+    #             concat_r = torch.cat([msg_r, x_unsqueezed], dim=-1)
+    #             print(f'[DEBUG] 第{i}轮反向拼接维度: {concat_r.shape} (应显示[1, {num_nodes}, {self.dim_hidden + self.dim_feature}])')
+                
+    #             print(f'[DEBUG] 反向GRU预期input_size: {self.update_r.input_size} (应显示{self.dim_hidden + self.dim_feature})')
+                
+    #             _, node_state = self.update_r(concat_r, node_state)
+    #             if self.layernorm:
+    #                 node_state = self.ln(node_state)
+            
+    #     return node_state.squeeze(0)
+
 
 class DirectMultiGCNEncoder(nn.Module):
     def __init__(self, 
