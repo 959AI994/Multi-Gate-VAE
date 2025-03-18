@@ -145,12 +145,27 @@ class Trainer():
             kl = s_kl + t_kl
         else:
             kl = 0
-        
+
+        # 集成prob loss和func loss
+        hs, hf = self.model(batch)
+        prob = self.model.pred_prob(hf)
+        # Task 1: Probability Prediction 
+        prob_loss = self.reg_loss(prob, batch['prob'])
+        # Task 2: Functional Similarity 
+        node_a = hf[batch['tt_pair_index'][0]]
+        node_b = hf[batch['tt_pair_index'][1]]
+        emb_dis = 1 - torch.cosine_similarity(node_a, node_b, eps=1e-8)
+        emb_dis_z = zero_normalization(emb_dis)
+        tt_dis_z = zero_normalization(batch['tt_dis'])
+        func_loss = self.reg_loss(emb_dis_z, tt_dis_z)
+
         loss_status = {
             'recon_loss': loss, 
             'kl_loss': kl,
             'pred_bin': pred_bin,
             'gt_bin': gt_bin,
+            'prob_loss': prob_loss, 
+            'func_loss': func_loss
         }
         
         return loss_status
@@ -180,6 +195,8 @@ class Trainer():
         batch_time = AverageMeter()
         recon_loss_stats = AverageMeter()
         kl_loss_stats = AverageMeter()
+        prob_loss_stats=AverageMeter()
+        func_loss_stats=AverageMeter()
         acc_stats = AverageMeter()
         tp_stats, fp_stats, tn_stats, fn_stats = AverageMeter(), AverageMeter(), AverageMeter(), AverageMeter()
         
@@ -204,7 +221,7 @@ class Trainer():
                     time_stamp = time.time()
                     # Get loss
                     loss_status = self.run_batch(batch)
-                    loss = loss_status['recon_loss'] + loss_status['kl_loss']
+                    loss = loss_status['recon_loss'] + loss_status['kl_loss']+loss_status['prob_loss']+loss_status['func_loss']
                     if phase == 'train':
                         loss.backward()
                     self.optimizer.step()
@@ -222,6 +239,8 @@ class Trainer():
                     batch_time.update(time.time() - time_stamp)
                     recon_loss_stats.update(loss_status['recon_loss'].item())
                     kl_loss_stats.update(loss_status['kl_loss'].item())
+                    prob_loss_stats.update(loss_status['prob_loss'].item())
+                    func_loss_stats.update(loss_status['func_loss'].item())
                     acc_stats.update(acc)
                     tp_stats.update(TP)
                     fp_stats.update(FP)
@@ -229,7 +248,7 @@ class Trainer():
                     fn_stats.update(FN)
                     if self.local_rank == 0:
                         Bar.suffix = '[{:}/{:}]|Tot: {total:} |ETA: {eta:} '.format(iter_id, len(dataset), total=bar.elapsed_td, eta=bar.eta_td)
-                        Bar.suffix += '|Recon: {:.4f} |KL: {:.4f} |ACC: {:.2f} '.format(recon_loss_stats.avg, kl_loss_stats.avg, acc_stats.avg * 100)
+                        Bar.suffix += '|Recon: {:.4f} |KL: {:.4f} |ACC: {:.2f} |Prob: {:.4f} |Func: {:.4f} '.format(recon_loss_stats.avg, kl_loss_stats.avg, acc_stats.avg * 100,prob_loss_stats.avg,func_loss_stats.avg)
                         Bar.suffix += '|TP: {:.2f} |FP: {:.2f} |TN: {:.2f} |FN: {:.2f} '.format(tp_stats.avg * 100, fp_stats.avg * 100, tn_stats.avg * 100, fn_stats.avg * 100)
                         Bar.suffix += '|Net: {:.2f}s '.format(batch_time.avg)
                         bar.next()
@@ -237,8 +256,8 @@ class Trainer():
                     self.save(os.path.join(self.log_dir, 'model_{:}.pth'.format(self.model_epoch)))
                     self.save(os.path.join(self.log_dir, 'model_last.pth'))
                 if self.local_rank == 0:
-                    self.logger.write('{}| Epoch: {:}/{:} |Recon: {:.4f} |KL: {:.4f} |ACC: {:.2f} |Net: {:.2f}s\n'.format(
-                        phase, epoch, num_epoch, recon_loss_stats.avg, kl_loss_stats.avg, acc_stats.avg*100, batch_time.avg))
+                    self.logger.write('{}| Epoch: {:}/{:} |Recon: {:.4f} |KL: {:.4f} |ACC: {:.2f} |Prob: {:.4f} |Func: {:.4f}|Net: {:.2f}s\n'.format(
+                        phase, epoch, num_epoch, recon_loss_stats.avg, kl_loss_stats.avg, acc_stats.avg*100, prob_loss_stats.avg,func_loss_stats.avg,batch_time.avg))
                     bar.finish()
             
             # Learning rate decay
