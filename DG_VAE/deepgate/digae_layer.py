@@ -235,7 +235,8 @@ class MultiGCNEncoder(nn.Module):
         
         # configuration
         self.num_rounds = num_rounds
-        self.enable_reverse = enable_reverse 
+        # self.enable_reverse = enable_reverse 
+        self.enable_reverse = True
         self.layernorm = layernorm
         # 添加属性定义
         self.dim_feature = dim_feature
@@ -257,7 +258,37 @@ class MultiGCNEncoder(nn.Module):
         device = next(self.parameters()).device
         num_nodes = len(x)
         node_state = torch.ones(1, num_nodes, self.dim_hidden).to(device)
-        r_edge_index = torch.stack([edge_index[1], edge_index[0]], dim=0)
+        
+        # 添加预处理检查
+        if edge_index is not None:
+            print(f"[EdgeIndex PreCheck] min: {edge_index.min().item()}, max: {edge_index.max().item()}, dtype: {edge_index.dtype}")
+        else:
+            print("[EdgeIndex PreCheck] edge_index is None before validation")
+        # 边索引有效性检查
+        if edge_index is None or edge_index.size(1) == 0:
+            print("[Error Context] Invalid edge_index details:")
+            print(f"- x shape: {x.shape}")
+            print(f"- num_nodes: {num_nodes}")
+            print(f"- device: {device}")
+            raise ValueError("Invalid edge_index encountered in source_conv")
+        # 反向边创建调试
+        try:
+            # r_edge_index = torch.stack([edge_index[1], edge_index[0]], dim=0)
+            r_edge_index = torch.stack([edge_index[1].clone(), edge_index[0].clone()], dim=0)
+            print(f"[Reverse Edge] Created with shape: {r_edge_index.shape}")
+        except Exception as e:
+            print(f"[Reverse Edge Error] During creation: {str(e)}")
+            print(f"Original edge_index: {edge_index}")
+            raise
+        # 循环调试
+        for i in range(self.num_rounds):
+            print(f"\n[Round {i+1}] Before aggregation:")
+            print(f"- node_state shape: {node_state.shape}")
+            print(f"- edge_index shape: {edge_index.shape}")
+            msg = self.aggr(node_state, edge_index)
+            print(f"[Aggregation] msg shape: {msg.shape}")
+        # todo：bug！
+        # r_edge_index = torch.stack([edge_index[1], edge_index[0]], dim=0)
         
         for _ in range(self.num_rounds):
             msg = self.aggr(node_state, edge_index)

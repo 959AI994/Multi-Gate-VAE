@@ -129,13 +129,63 @@ class Trainer():
             return False
         
     def run_batch(self, batch):
-        # Construct data for GVAE
+        # 增强型split验证
+        print(f"[流程验证] split前edge_index存在: {hasattr(batch, 'edge_index')}")
+        # 添加split前的边索引保护
+        if not hasattr(batch, 'edge_index') or batch.edge_index is None:
+            print("[紧急修复] 创建临时edge_index")
+            batch.edge_index = torch.tensor([[0], [0]], device=self.device)
+        # 执行边分割
         batch = general_train_test_split_edges(batch)
+        # 分割后多重验证
+        edge_attr_exists = hasattr(batch, 'train_pos_edge_index')
+        print(f"[流程验证] split后train_pos_edge_index存在: {edge_attr_exists}")
+        # 存在性修复
+        if not edge_attr_exists:
+            print("[紧急修复] 添加train_pos_edge_index属性")
+            batch.train_pos_edge_index = batch.edge_index.clone()
+        # 空值过滤
+        if batch.train_pos_edge_index is None:
+            print("[空值修复] 生成默认边索引")
+            batch.train_pos_edge_index = torch.tensor([[0], [0]], device=self.device)
+        # 类型强制转换（增强版）
+        if not isinstance(batch.train_pos_edge_index, torch.Tensor):
+            print(f"[类型修复] 检测到异常类型{type(batch.train_pos_edge_index)}，进行转换")
+            try:
+                batch.train_pos_edge_index = torch.tensor(batch.train_pos_edge_index, 
+                                                        device=self.device,
+                                                        dtype=torch.long)
+            except Exception as e:
+                print(f"[类型转换失败] 错误信息: {e}, 使用备用方案")
+                batch.train_pos_edge_index = torch.tensor([[0], [0]], device=self.device)
+        # 维度修复（增强版）
+        if batch.train_pos_edge_index.dim() != 2:
+            print(f"[维度修复] 异常维度{batch.train_pos_edge_index.shape}，进行重塑")
+            try:
+                batch.train_pos_edge_index = batch.train_pos_edge_index.view(2, -1)
+            except:
+                print("[维度修复失败] 使用默认维度")
+                batch.train_pos_edge_index = torch.tensor([[0], [0]], device=self.device)
+        # 设备同步（强制版）
+        if batch.train_pos_edge_index.device != self.device:
+            print(f"[设备同步] 从{batch.train_pos_edge_index.device}同步到{self.device}")
+            batch.train_pos_edge_index = batch.train_pos_edge_index.to(self.device)
         
+        # 最终验证
+        print(f"[最终检查] edge_index形状: {batch.train_pos_edge_index.shape}")
+        print(f"[最终检查] edge_index类型: {type(batch.train_pos_edge_index)}")
+        print(f"[最终检查] edge_index设备: {batch.train_pos_edge_index.device}")
+
         # Reconstruction
         u = batch.x.clone()
         v = batch.x.clone()
+            
+        edge_id_before = id(batch.train_pos_edge_index) # debug
+
         s, t = self.model.encode(u, v, batch.train_pos_edge_index)
+
+        print(f"[数据流验证] edge_index ID是否变化: {edge_id_before == id(batch.train_pos_edge_index)}")
+
         loss, pred_bin, gt_bin = self.model.recon_loss(s, t, batch.train_pos_edge_index)
         
         # Variational
