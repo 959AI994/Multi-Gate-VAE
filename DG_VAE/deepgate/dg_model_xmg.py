@@ -46,13 +46,6 @@ class Model(nn.Module):
         self.dim_hidden = dim_hidden
         self.dim_mlp = 32
 
-        # 网络结构：结构部分聚合器仅用于计算消息，不再更新结构表示
-        self.aggr_and_strc = TFMlpAggr(self.dim_hidden * 1, self.dim_hidden)
-        self.aggr_not_strc = TFMlpAggr(self.dim_hidden * 1, self.dim_hidden)
-        self.aggr_xor_strc = TFMlpAggr(self.dim_hidden * 1, self.dim_hidden)
-        self.aggr_maj_strc = TFMlpAggr(self.dim_hidden * 1, self.dim_hidden)
-        self.aggr_or_strc  = TFMlpAggr(self.dim_hidden * 1, self.dim_hidden)
-
         # 功能部分聚合器：输入为结构和功能拼接后的节点状态
         self.aggr_and_func = TFMlpAggr(self.dim_hidden * 2, self.dim_hidden)
         self.aggr_not_func = TFMlpAggr(self.dim_hidden * 1, self.dim_hidden)

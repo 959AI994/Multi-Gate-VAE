@@ -43,10 +43,6 @@ class Model(nn.Module):
         self.dim_hidden = dim_hidden
         self.dim_mlp = 32
 
-        # Networks for aggregation and updating (structure part仅保留用于消息计算，不更新结构状态)
-        self.aggr_and_strc = TFMlpAggr(self.dim_hidden * 1, self.dim_hidden)
-        self.aggr_not_strc = TFMlpAggr(self.dim_hidden * 1, self.dim_hidden)
-        self.aggr_xor_strc = TFMlpAggr(self.dim_hidden * 1, self.dim_hidden)
 
         # 功能部分：聚合时输入为 [structure, function]
         self.aggr_and_func = TFMlpAggr(self.dim_hidden * 2, self.dim_hidden)

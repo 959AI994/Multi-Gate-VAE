@@ -45,24 +45,15 @@ class Model(nn.Module):
         self.dim_mlp = 32
 
         # Networks for aggregation and updating
-        self.aggr_and_strc = TFMlpAggr(self.dim_hidden * 1, self.dim_hidden)
-        self.aggr_not_strc = TFMlpAggr(self.dim_hidden * 1, self.dim_hidden)
-        self.aggr_or_strc = TFMlpAggr(self.dim_hidden * 1, self.dim_hidden)
-        self.aggr_maj_strc = TFMlpAggr(self.dim_hidden * 1, self.dim_hidden)
-
         self.aggr_and_func = TFMlpAggr(self.dim_hidden * 2, self.dim_hidden)
         self.aggr_not_func = TFMlpAggr(self.dim_hidden * 1, self.dim_hidden)
         self.aggr_or_func = TFMlpAggr(self.dim_hidden * 2, self.dim_hidden)
         self.aggr_maj_func = TFMlpAggr(self.dim_hidden * 2, self.dim_hidden)
         
-        self.update_and_strc = GRU(self.dim_hidden, self.dim_hidden)
         self.update_and_func = GRU(self.dim_hidden, self.dim_hidden)
-        self.update_not_strc = GRU(self.dim_hidden, self.dim_hidden)
         self.update_not_func = GRU(self.dim_hidden, self.dim_hidden)
         
-        self.update_or_strc = GRU(self.dim_hidden, self.dim_hidden)
         self.update_or_func = GRU(self.dim_hidden, self.dim_hidden)
-        self.update_maj_strc = GRU(self.dim_hidden, self.dim_hidden)
         self.update_maj_func = GRU(self.dim_hidden, self.dim_hidden)
 
         # Readout network for prediction
@@ -94,7 +85,7 @@ class Model(nn.Module):
                 l_not_node = G.forward_index[layer_mask & not_mask]
                 if l_not_node.size(0) > 0:
                     not_edge_index, not_edge_attr = subgraph(l_not_node, edge_index, dim=1)
-                    msg = self.aggr_not_strc(s, not_edge_index, not_edge_attr)
+                    msg = self.aggr_not_func(s, not_edge_index, not_edge_attr)
                     not_msg = torch.index_select(msg, dim=0, index=l_not_node)
                     hf_not = torch.index_select(hf, dim=0, index=l_not_node)
                     _, hf_not = self.update_not_func(not_msg.unsqueeze(0), hf_not.unsqueeze(0))
@@ -104,7 +95,7 @@ class Model(nn.Module):
                 l_and_node = G.forward_index[layer_mask & and_mask]
                 if l_and_node.size(0) > 0:
                     and_edge_index, and_edge_attr = subgraph(l_and_node, edge_index, dim=1)
-                    msg = self.aggr_and_strc(s, and_edge_index, and_edge_attr)
+                    msg = self.aggr_and_func(s, and_edge_index, and_edge_attr)
                     and_msg = torch.index_select(msg, dim=0, index=l_and_node)
                     hf_and = torch.index_select(hf, dim=0, index=l_and_node)
                     _, hf_and = self.update_and_func(and_msg.unsqueeze(0), hf_and.unsqueeze(0))
@@ -114,7 +105,7 @@ class Model(nn.Module):
                 l_or_node = G.forward_index[layer_mask & or_mask]
                 if l_or_node.size(0) > 0:
                     or_edge_index, or_edge_attr = subgraph(l_or_node, edge_index, dim=1)
-                    msg = self.aggr_or_strc(s, or_edge_index, or_edge_attr)
+                    msg = self.aggr_or_func(s, or_edge_index, or_edge_attr)
                     or_msg = torch.index_select(msg, dim=0, index=l_or_node)
                     hf_or = torch.index_select(hf, dim=0, index=l_or_node)
                     _, hf_or = self.update_or_func(or_msg.unsqueeze(0), hf_or.unsqueeze(0))
@@ -124,7 +115,7 @@ class Model(nn.Module):
                 l_maj_node = G.forward_index[layer_mask & maj_mask]
                 if l_maj_node.size(0) > 0:
                     maj_edge_index, maj_edge_attr = subgraph(l_maj_node, edge_index, dim=1)
-                    msg = self.aggr_maj_strc(s, maj_edge_index, maj_edge_attr)
+                    msg = self.aggr_maj_func(s, maj_edge_index, maj_edge_attr)
                     maj_msg = torch.index_select(msg, dim=0, index=l_maj_node)
                     hf_maj = torch.index_select(hf, dim=0, index=l_maj_node)
                     _, hf_maj = self.update_maj_func(maj_msg.unsqueeze(0), hf_maj.unsqueeze(0))
