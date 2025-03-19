@@ -6,7 +6,7 @@ Using Auto-Encoder to enhance DeepGate2 structural embeddings
 ### 导入deepgate包
 export PYTHONPATH=$PYTHONPATH:/home/xqgrp/wangjingxin/pythonproject/Multi-Gate-VAE/DG_VAE
 ### 配置参数
-NUM_PROC=1
+NUM_PROC=4
 MODEL='DG_AE'
 EXP_ID='DG_AE_NORM'
 BATCH_SIZE=4

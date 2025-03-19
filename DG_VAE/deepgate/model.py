@@ -16,7 +16,7 @@ from .arch.tfmlp import TFMlpAggr
 from .arch.gcn_conv import AggConv
 
 # 引入 DirectedGAE 的相关部分
-from .digae_layer import DirectedInnerProductDecoder  # 确保 digae_layer.py 在同一目录下或已正确安装
+from .digae_layer import DirectedInnerProductDecoder  
 
 EPS        = 1e-15
 MAX_LOGSTD = 10
@@ -30,7 +30,7 @@ class IntegratedModel(nn.Module):
         self.struct_encoder = struct_encoder
         self.decoder = DirectedInnerProductDecoder()
 
-        # 功能编码器 (来自你提供的 Model)
+        # 功能编码器 
         self.num_rounds = num_rounds
         self.enable_encode = enable_encode  # TODO:review,此参数可能不再需要？因为结构编码已分离
         self.enable_reverse = enable_reverse  # TODO:review,如果结构编码器使用，这里可能也需要？
