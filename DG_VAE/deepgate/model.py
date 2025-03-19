@@ -69,8 +69,7 @@ class IntegratedModel(nn.Module):
             # AND Gate
             l_and_node = data.forward_index[layer_mask & and_mask]
             if l_and_node.size(0) > 0:
-                and_edge_index, and_edge_attr = subgraph(l_and_node, edge_index,
-                                                         dim=1)  # subgraph function is available
+                and_edge_index, and_edge_attr = subgraph(l_and_node, edge_index, dim=1)  # subgraph function is available
 
                 # Update function hidden state
                 msg = self.aggr_and_func(node_state, and_edge_index, and_edge_attr)
@@ -82,8 +81,7 @@ class IntegratedModel(nn.Module):
             # NOT Gate
             l_not_node = data.forward_index[layer_mask & not_mask]
             if l_not_node.size(0) > 0:
-                not_edge_index, not_edge_attr = subgraph(l_not_node, edge_index,
-                                                         dim=1)  # subgraph function is available
+                not_edge_index, not_edge_attr = subgraph(l_not_node, edge_index,dim=1)  # subgraph function is available
                 # Update function hidden state
                 msg = self.aggr_not_func(hf, not_edge_index, not_edge_attr) # 直接输入hf
                 not_msg = torch.index_select(msg, dim=0, index=l_not_node)
@@ -123,6 +121,37 @@ class IntegratedModel(nn.Module):
         gt_bin = gt_bin.int()
 
         return pos_loss + neg_loss, pred_bin, gt_bin
+    
+    def load(self, model_path):
+        checkpoint = torch.load(model_path, map_location=lambda storage, loc: storage)
+        state_dict_ = checkpoint['state_dict']
+        state_dict = {}
+        for k in state_dict_:
+            if k.startswith('module') and not k.startswith('module_list'):
+                state_dict[k[7:]] = state_dict_[k]
+            else:
+                state_dict[k] = state_dict_[k]
+        model_state_dict = self.state_dict()
+        
+        for k in state_dict:
+            if k in model_state_dict:
+                if state_dict[k].shape != model_state_dict[k].shape:
+                    print('Skip loading parameter {}, required shape{}, loaded shape{}.'.format(
+                        k, model_state_dict[k].shape, state_dict[k].shape))
+                    state_dict[k] = model_state_dict[k]
+            else:
+                print('Drop parameter {}.'.format(k))
+        for k in model_state_dict:
+            if not (k in state_dict):
+                print('No param {}.'.format(k))
+                state_dict[k] = model_state_dict[k]
+        self.load_state_dict(state_dict, strict=False)
+        
+    def load_pretrained(self, pretrained_model_path = ''):
+        if pretrained_model_path == '':
+            pretrained_model_path = os.path.join(os.path.dirname(__file__), 'pretrained', 'model.pth')
+        self.load(pretrained_model_path)
+
 
 # ----------------------------------------------- 旧版：hs和hf版本的model-----------------------------------------------------------------
 # from __future__ import absolute_import
