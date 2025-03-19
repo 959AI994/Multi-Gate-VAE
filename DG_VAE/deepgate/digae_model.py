@@ -102,6 +102,7 @@ class GAE(torch.nn.Module):
 
         return roc_auc_score(y, pred), average_precision_score(y, pred)
 
+# 最终使用有向的DirectedGAE
 class DirectedGAE(torch.nn.Module):
     def __init__(self, encoder, decoder=None):
         super(DirectedGAE, self).__init__()

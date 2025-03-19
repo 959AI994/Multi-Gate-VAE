@@ -24,7 +24,7 @@ if __name__ == '__main__':
     
     print('[INFO] Create Model')
     if 'DG' in args.model:
-        encoder = deepgate.digae_layer.DirectMultiGCNEncoder(
+        encoder = deepgate.digae_layer.DirectMultiGCNEncoder(   # 用这个作为encoder
             dim_hidden=args.dim_hidden, dim_feature=args.dim_feature, enable_reverse=True, 
             s_rounds=args.s_rounds, t_rounds=args.t_rounds, 
             layernorm=args.layernorm
@@ -34,11 +34,11 @@ if __name__ == '__main__':
             in_channels=3, hidden_channels=64, out_channels=64,
             alpha=1.0, beta=0.0, self_loops=True, adaptive=False
         )
-    decoder = deepgate.digae_layer.DirectedInnerProductDecoder()
+    decoder = deepgate.digae_layer.DirectedInnerProductDecoder()  # 用这个作为decoder
     if 'VAE' in args.model:
         model = deepgate.digvae_model.DirectedGVAE(encoder, args.dim_hidden, decoder)
     else:
-        model = deepgate.digae_model.DirectedGAE(encoder, decoder)
+        model = deepgate.digae_model.DirectedGAE(encoder, decoder)  #用这个作为整体的model
     
     print('[INFO] Create Trainer')
     trainer = deepgate.Trainer(
