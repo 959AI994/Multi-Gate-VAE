@@ -7,13 +7,11 @@ import os
 from torch import nn
 from torch.nn import GRU
 from .utils.dag_utils import subgraph, custom_backward_subgraph
-# 注意：不再需要 generate_hs_init
 from .arch.mlp import MLP
 from .arch.mlp_aggr import MlpAggr
 from .arch.tfmlp import TFMlpAggr
 from .arch.gcn_conv import AggConv
 from torch_geometric.utils import negative_sampling, remove_self_loops, add_self_loops
-# 引入 DirectedGAE 的相关部分
 from .digae_layer import DirectedInnerProductDecoder  
 
 EPS        = 1e-15
@@ -25,7 +23,7 @@ class Model(nn.Module):
     This is the integrated version where structural and functional states are combined.
     '''
     def __init__(self, 
-                 struct_encoder,  # Structural encoder (e.g., from DirectedGAE)
+                 xag_struct_encoder,  # Structural encoder (from DirectedGAE)
                  num_rounds=1, 
                  dim_hidden=128, 
                  enable_encode=True,
@@ -33,7 +31,7 @@ class Model(nn.Module):
         super(Model, self).__init__()
         
         # 结构编码器 (来自 DirectedGAE)
-        self.struct_encoder = struct_encoder
+        self.xag_struct_encoder = xag_struct_encoder
         self.decoder = DirectedInnerProductDecoder()
 
         # Configuration
@@ -67,12 +65,12 @@ class Model(nn.Module):
 
     def forward(self, G):
         device = next(self.parameters()).device
-        num_nodes = len(G.gate)
-        num_layers_f = max(G.forward_level).item() + 1
+        num_nodes = len(G.xag_gate)
+        num_layers_f = max(G.xag_forward_level).item() + 1
 
         # 使用结构编码器获得结构编码 s 和 t
-        x, edge_index = G.x, G.edge_index
-        s, t = self.struct_encoder(x, x, edge_index)  # s 为结构信息，t 可用于后续重构
+        x, edge_index = G.xag_x, G.xag_edge_index
+        s, t = self.xag_struct_encoder(x, x, edge_index)  # s 为结构信息，t 可用于后续重构
 
         # 初始化功能隐藏状态 hf (结构信息 s 不再更新)
         hf = torch.zeros(num_nodes, self.dim_hidden, device=device)
@@ -80,16 +78,16 @@ class Model(nn.Module):
         node_state = torch.cat([s, hf], dim=-1)
 
         # 掩码定义（门类型）
-        not_mask = G.gate.squeeze(1) == 2  # NOT 门
-        and_mask = G.gate.squeeze(1) == 3  # AND 门
-        xor_mask = G.gate.squeeze(1) == 5  # XOR 门
+        not_mask = G.xag_gate.squeeze(1) == 2  # NOT 门
+        and_mask = G.xag_gate.squeeze(1) == 3  # AND 门
+        xor_mask = G.xag_gate.squeeze(1) == 5  # XOR 门
 
         for _ in range(self.num_rounds):
             for level in range(1, num_layers_f):
-                layer_mask = G.forward_level == level
+                layer_mask = G.xag_forward_level == level
 
                 # AND Gate update
-                l_and_node = G.forward_index[layer_mask & and_mask]
+                l_and_node = G.xag_forward_index[layer_mask & and_mask]
                 if l_and_node.size(0) > 0:
                     and_edge_index, and_edge_attr = subgraph(l_and_node, edge_index, dim=1)
                     # 此处不更新结构状态，直接用结构编码 s 参与消息聚合
@@ -100,7 +98,7 @@ class Model(nn.Module):
                     hf[l_and_node, :] = hf_and.squeeze(0)
 
                 # NOT Gate update
-                l_not_node = G.forward_index[layer_mask & not_mask]
+                l_not_node = G.xag_forward_index[layer_mask & not_mask]
                 if l_not_node.size(0) > 0:
                     not_edge_index, not_edge_attr = subgraph(l_not_node, edge_index, dim=1)
                     msg = self.aggr_not_func(node_state, not_edge_index, not_edge_attr)
@@ -110,7 +108,7 @@ class Model(nn.Module):
                     hf[l_not_node, :] = hf_not.squeeze(0)
                 
                 # XOR Gate update
-                l_xor_node = G.forward_index[layer_mask & xor_mask]
+                l_xor_node = G.xag_forward_index[layer_mask & xor_mask]
                 if l_xor_node.size(0) > 0:
                     xor_edge_index, xor_edge_attr = subgraph(l_xor_node, edge_index, dim=1)
                     msg = self.aggr_xor_func(node_state, xor_edge_index, xor_edge_attr)
@@ -157,7 +155,6 @@ class Model(nn.Module):
         if pretrained_model_path == '':
             pretrained_model_path = os.path.join(os.path.dirname(__file__), 'pretrained', 'model.pth')
         self.load(pretrained_model_path)
-
 
     def recon_loss(self, s, t, pos_edge_index, neg_edge_index=None):
         pos_pred = self.decoder(s, t, pos_edge_index, sigmoid=True)

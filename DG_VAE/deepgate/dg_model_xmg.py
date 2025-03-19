@@ -150,7 +150,7 @@ class Model(nn.Module):
                 node_state = torch.cat([s, hf], dim=-1)
 
         # 返回结构编码 s 与功能隐藏状态 hf
-        return s, hf
+        return s, t,hf
     
     def pred_prob(self, hf):
         prob = self.readout_prob(hf)

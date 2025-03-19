@@ -193,3 +193,4 @@ class Model(nn.Module):
         gt_bin = gt_bin.int()
 
         return pos_loss + neg_loss, pred_bin, gt_bin
+    
