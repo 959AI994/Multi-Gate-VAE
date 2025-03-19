@@ -1,4 +1,4 @@
-from .model import Model
+from .model import IntegratedModel
 from .trainer import Trainer
 from .parser import *
 from .parser_func import *

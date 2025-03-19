@@ -130,22 +130,19 @@ class Trainer():
         
     def run_batch(self, batch):
         # 增强型split验证
-        print(f"[流程验证] split前edge_index存在: {hasattr(batch, 'edge_index')}")
+        # print(f"[流程验证] split前edge_index存在: {hasattr(batch, 'edge_index')}")
         # 执行边分割
         batch = general_train_test_split_edges(batch)
         # # 分割后多重验证
         edge_attr_exists = hasattr(batch, 'train_pos_edge_index') #debug
-        print(f"[流程验证] split后train_pos_edge_index存在: {edge_attr_exists}")
+        # print(f"[流程验证] split后train_pos_edge_index存在: {edge_attr_exists}")
 
         # Reconstruction
         u = batch.x.clone()
         v = batch.x.clone()
             
-        # edge_id_before = id(batch.train_pos_edge_index) # debug
-
-        s, t = self.model.encode(u, v, batch.train_pos_edge_index)
-
-        # print(f"[数据流验证] edge_index ID是否变化: {edge_id_before == id(batch.train_pos_edge_index)}")
+        # s, t = self.model.encode(u, v, batch.train_pos_edge_index)
+        s,t,hf = self.model(batch)
 
         loss, pred_bin, gt_bin = self.model.recon_loss(s, t, batch.train_pos_edge_index)
         
@@ -155,10 +152,10 @@ class Trainer():
             t_kl = -0.5/ v.size(0) * (1 + 2*self.model.t_logstd - self.model.t_mu**2 - torch.exp(self.model.t_logstd)**2).sum(1).mean()
             kl = s_kl + t_kl
         else:
-            kl = 0
+            # kl = 0
+            kl = torch.tensor(0.0, device=self.device)
 
         # 集成prob loss和func loss
-        hf = self.model(batch)
         prob = self.model.pred_prob(hf)
         # Task 1: Probability Prediction 
         prob_loss = self.reg_loss(prob, batch['prob'])
@@ -167,7 +164,7 @@ class Trainer():
         node_b = hf[batch['tt_pair_index'][1]]
         emb_dis = 1 - torch.cosine_similarity(node_a, node_b, eps=1e-8)
         emb_dis_z = zero_normalization(emb_dis)
-        tt_dis_z = zero_normalization(batch['tt_dis'])
+        tt_dis_z = zero_normalization(batch['tt_sim'])
         func_loss = self.reg_loss(emb_dis_z, tt_dis_z)
 
         loss_status = {

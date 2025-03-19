@@ -22,7 +22,7 @@ def general_train_test_split_edges(data, val_ratio=0, test_ratio=0, directed=Tru
     :rtype: :class:`torch_geometric.data.Data`
     """
 
-    print(f"[边分割] 输入边数: {data.edge_index.size(1)}")
+    # print(f"[边分割] 输入边数: {data.edge_index.size(1)}")
     # assert 'batch' not in data  # No batch-mode.
 
     num_nodes = data.num_nodes
@@ -78,7 +78,7 @@ def general_train_test_split_edges(data, val_ratio=0, test_ratio=0, directed=Tru
     if data.train_pos_edge_index is None:
         raise ValueError("训练边索引创建失败")
     
-    print(f"[边分割] 输出训练边数: {data.train_pos_edge_index.size(1)}")
+    # print(f"[边分割] 输出训练边数: {data.train_pos_edge_index.size(1)}")
 
     return data
 
