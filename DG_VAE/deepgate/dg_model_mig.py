@@ -15,6 +15,9 @@ from torch_geometric.utils import negative_sampling, remove_self_loops, add_self
 # 引入 DirectedGAE 的相关部分
 from .digae_layer import DirectedInnerProductDecoder  
 
+EPS        = 1e-15
+MAX_LOGSTD = 10
+
 class Model(nn.Module):
     '''
     Recurrent Graph Neural Networks for Circuits.(MIG)
