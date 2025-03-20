@@ -266,7 +266,7 @@ class Trainer():
                             'func_loss': loss_status['func_loss']
                         }
                         
-                        # 选择模型中的某个层作为参考层（例如编码器）
+                        # TODO:选择模型中的参考层（例如编码器?）
                         reference_layer = self.model.encoder
                         
                         # 通过Balancer计算总损失
@@ -294,7 +294,7 @@ class Trainer():
                             self.logger.write(f"Metric| {k}: {v:.4f}\n")
                             
                     # self.optimizer.step()
-                    
+
                     # Print and save log
                     pred_bin = loss_status['pred_bin'].detach().cpu()
                     gt_bin = loss_status['gt_bin'].detach().cpu()
