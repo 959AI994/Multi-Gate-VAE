@@ -30,12 +30,14 @@ class Model(nn.Module):
                  num_rounds = 1, 
                  dim_hidden = 128, 
                  enable_encode = True,
-                 enable_reverse = False):
+                 enable_reverse = True):
         super(Model, self).__init__()
         
         # 结构编码器 (来自 DirectedGAE)
         self.struct_encoder = struct_encoder
         self.decoder = DirectedInnerProductDecoder()
+        self.hs_linear = nn.Linear(dim_hidden * 2, dim_hidden)
+        self.hs_decompose = nn.Linear(dim_hidden, dim_hidden * 2)
 
         # 配置
         self.num_rounds = num_rounds
@@ -48,7 +50,7 @@ class Model(nn.Module):
 
         # 功能部分聚合器：输入为结构和功能拼接后的节点状态
         self.aggr_and_func = TFMlpAggr(self.dim_hidden * 2, self.dim_hidden)
-        self.aggr_not_func = TFMlpAggr(self.dim_hidden * 1, self.dim_hidden)
+        self.aggr_not_func = TFMlpAggr(self.dim_hidden * 2, self.dim_hidden)
         self.aggr_xor_func = TFMlpAggr(self.dim_hidden * 2, self.dim_hidden)
         self.aggr_maj_func = TFMlpAggr(self.dim_hidden * 2, self.dim_hidden)
         self.aggr_or_func  = TFMlpAggr(self.dim_hidden * 2, self.dim_hidden)
@@ -71,12 +73,14 @@ class Model(nn.Module):
 
         # 使用外部结构编码器获得结构编码 s（以及 t，可用于后续重构任务）
         x, edge_index = G.x, G.edge_index
-        s, t = self.struct_encoder(x, x, edge_index)
+        one_hot = torch.nn.functional.one_hot(G.xmg_x[:, 1].to(int), num_classes=6).to(device)
+        s, t = self.xmg_struct_encoder(one_hot, one_hot, edge_index)  # s 为结构信息，t 可用于后续重构
 
         # 初始化功能隐藏状态 hf（结构信息 s 保持不变）
         hf = torch.zeros(num_nodes, self.dim_hidden, device=device)
+        hs = self.hs_linear(torch.cat([s, t], dim=-1))
         # 初始节点状态为结构信息与功能状态的拼接
-        node_state = torch.cat([s, hf], dim=-1)
+        node_state = torch.cat([hs, hf], dim=-1)
 
         # 获取各类门的掩码
         not_mask = G.gate.squeeze(1) == 2  # NOT 门
@@ -140,10 +144,10 @@ class Model(nn.Module):
                     hf[l_or_node, :] = hf_or.squeeze(0)
 
                 # 更新节点状态：重新拼接不变的结构编码 s 与最新的 hf
-                node_state = torch.cat([s, hf], dim=-1)
+                node_state = torch.cat([hs, hf], dim=-1)
 
         # 返回结构编码 s 与功能隐藏状态 hf
-        return s, t,hf
+        return hs,hf
     
     def pred_prob(self, hf):
         prob = self.readout_prob(hf)
@@ -178,7 +182,8 @@ class Model(nn.Module):
             pretrained_model_path = os.path.join(os.path.dirname(__file__), 'pretrained', 'model.pth')
         self.load(pretrained_model_path)
 
-    def recon_loss(self, s, t, pos_edge_index, neg_edge_index=None):
+    def recon_loss(self, hs, pos_edge_index, neg_edge_index=None):
+        s, t = self.hs_decompose(hs).chunk(2, dim=-1)
         pos_pred = self.decoder(s, t, pos_edge_index, sigmoid=True)
         pos_pred_bin = (pos_pred > 0.5).float()
         pos_gt = torch.ones_like(pos_pred)
