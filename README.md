@@ -26,9 +26,9 @@ MODEL='DG_AE'
 EXP_ID='DG_AE_NORM'
 BATCH_SIZE=4
 ### debug
-python train.py --exp_id $EXP_ID --model $MODEL --batch_size 2 --num_epochs 300 --layernorm  --type mig
+python train.py --exp_id $EXP_ID --model $MODEL --batch_size 64 --num_epochs 100 --layernorm  --type mig
 ### 分布train
-torchrun --nproc_per_node=1 --master_port=29888 train.py --exp_id $EXP_ID --distributed --model $MODEL --batch_size 2 --num_epochs 300 --layernorm <br>
+torchrun --nproc_per_node=2 --master_port=29888 train.py --exp_id $EXP_ID --distributed --model $MODEL --batch_size 64 --num_epochs 100 --layernorm   --gpus 4,5  --type mig 
 
 # Notice
 共六个聚合器，需要考虑6种，gate_to_index = {'INPUT': 0, 'MAJ': 1, 'NOT': 2, 'AND': 3, 'OR': 4, 'XOR': 5} 

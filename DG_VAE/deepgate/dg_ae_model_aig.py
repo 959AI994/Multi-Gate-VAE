@@ -56,7 +56,7 @@ class Model(nn.Module):
         num_layers_f = max(data.forward_level).item() + 1
         # 结构编码
         x, edge_index = data.x, data.edge_index
-        one_hot = torch.nn.functional.one_hot(G.x[:, 1].to(int), num_classes=5).to(device)
+        one_hot = torch.nn.functional.one_hot(data.x[:, 1].to(int), num_classes=6).to(device)
         s, t = self.struct_encoder(one_hot, one_hot, edge_index)
         # 初始化功能隐藏状态
         hf = torch.zeros(num_nodes, self.dim_hidden).to(device)

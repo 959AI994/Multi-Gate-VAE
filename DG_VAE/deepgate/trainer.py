@@ -27,8 +27,8 @@ class Trainer():
                  prob_rc_func_weight = [3.0, 1.0, 2.0],
                  emb_dim = 128, 
                  device = 'cpu', 
-                 batch_size=32, num_workers=4, 
-                 distributed = False
+                 batch_size=32, num_workers=0, 
+                 distributed = True
                  ):
         super(Trainer, self).__init__()
         # Config

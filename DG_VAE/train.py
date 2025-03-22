@@ -13,12 +13,15 @@ import deepgate.dg_ae_model_aig
 import deepgate.dg_ae_model_mig
 import deepgate.dg_ae_model_xag
 import deepgate.dg_ae_model_xmg
+import torch
+import torch.distributed as dist
 
-os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+# os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
 if __name__ == '__main__':
 
     args = get_parse_args()
+
     DATA_DIR = f'/home/xqgrp/wangjingxin/datasets/mixgate_data/4npz/{args.type}_npz/'
 
     circuit_path = os.path.join(DATA_DIR, 'graphs.npz')
@@ -71,12 +74,14 @@ if __name__ == '__main__':
         #     enable_reverse=True
         # )
 
-    print('[INFO] Create Trainer')
+
     trainer = deepgate.Trainer(
         args, model, 
         training_id = args.exp_id, batch_size=args.batch_size, 
-        distributed=args.distributed
+        distributed=args.distributed,
         # distributed=False, device='cuda:0'
+        #  device=torch.device(f'cuda:{args.local_rank}')  # 使用 local_rank 指定设备
+        # device=torch.device(f'cuda:{os.environ.get("LOCAL_RANK", 0)}')  # ✅ 正确方式
     )
     if args.resume:
         trainer.resume()
