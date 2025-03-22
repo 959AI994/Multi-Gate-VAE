@@ -26,7 +26,7 @@ class NpzParser():
     def __init__(self, data_dir, circuit_path, label_path, circuit_type,random_shuffle=True, trainval_split=0.9): 
         self.data_dir = data_dir
         self.circuit_type = circuit_type  # 保存电路类型
-        dataset = self.inmemory_dataset(data_dir, circuit_path, label_path)
+        dataset = self.inmemory_dataset(data_dir, circuit_path, label_path,circuit_type)
         if random_shuffle:
             perm = torch.randperm(len(dataset))
             dataset = dataset[perm]
@@ -72,11 +72,15 @@ class NpzParser():
             # 根据类型动态导入
             if self.circuit_type == 'aig':
                 from .parser_func import parse_pyg_mlpgate
+                tt_key = 'tt_sim'  # AIG使用tt_sim
             else:
                 from .parser_func_others import parse_pyg_mlpgate
+                tt_key = 'tt_dis'  # 其他类型使用tt_dis
+                labels = read_npz_file(self.label_path)['labels'].item()
 
             data_list = []
             tot_pairs = 0 
+
             circuits = read_npz_file(self.circuit_path)['circuits'].item()
             # if not aig then: 
             # labels = read_npz_file(self.label_path)['labels'].item()
@@ -88,9 +92,19 @@ class NpzParser():
                     #--------------------if model type = aig exchange "circuits" with "labels"--------------------
                     x = circuits[cir_name]["x"]
                     edge_index = circuits[cir_name]["edge_index"]
-                    tt_dis = circuits[cir_name]['tt_sim']#in aig_graphs there is no tt_dis but tt_sim
-                    tt_pair_index = circuits[cir_name]['tt_pair_index']
-                    prob = circuits[cir_name]['prob']
+
+                    # tt_dis = circuits[cir_name][tt_key] # in aig_graphs there is no tt_dis but tt_sim
+                    # tt_pair_index = circuits[cir_name]['tt_pair_index']
+                    # prob = circuits[cir_name]['prob']
+                    # 类型相关特征
+                    if self.circuit_type == 'aig':
+                        tt_dis = circuits[cir_name][tt_key]
+                        tt_pair_index = circuits[cir_name]['tt_pair_index']
+                        prob = circuits[cir_name]['prob']
+                    else:
+                        tt_dis = labels[cir_name][tt_key]  # 从label数据源获取
+                        tt_pair_index = labels[cir_name]['tt_pair_index']
+                        prob = labels[cir_name]['prob']
 
                     if len(tt_pair_index) == 0 :
                         print('No tt or rc pairs: ', cir_name)

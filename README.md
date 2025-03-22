@@ -14,7 +14,7 @@ MODEL='DG_AE'
 EXP_ID='DG_AE_NORM'
 BATCH_SIZE=4
 ### debug
-python train.py --exp_id $EXP_ID --model $MODEL --batch_size 2 --num_epochs 300 --layernorm
+python train.py --exp_id $EXP_ID --model $MODEL --batch_size 2 --num_epochs 300 --layernorm  --type mig
 ### train
 torchrun --nproc_per_node=1 --master_port=29888 train.py --exp_id $EXP_ID --distributed --model $MODEL --batch_size 2 --num_epochs 300 --layernorm <br>
 
