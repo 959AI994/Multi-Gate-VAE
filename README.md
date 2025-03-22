@@ -1,3 +1,7 @@
+### Resource
+This repository's code is an extension of the DG-VAE (written by stone) version code (with the addition of multimodal and func loss).<br>
+DG-VAE：https://github.com/zshi0616/DG_VAE
+
 ### Introduction
 We can use the code in this repository to extract embeddings of different modes, such as xag, mig, xmg, aig.
 
@@ -8,7 +12,7 @@ export PYTHONPATH=~/multi_gate/multi_gate_2:$PYTHONPATH <br>
 cd examples/ <br>
 python -m torch.distributed.launch --nproc_per_node=2  train.py<br>
 
-### Tools
+### Notice
 （1）merge.py:<br>可以用merge.py脚本来合并graphs.py和labels.py中的内容<br>
 （2）merge_all.py: <br>可以将aig,mig,xmg,xag四个模态npz文件合并成一个<br>
 （3）parser.py： <br>
