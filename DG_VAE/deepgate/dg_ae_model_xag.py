@@ -23,7 +23,7 @@ class Model(nn.Module):
     This is the integrated version where structural and functional states are combined.
     '''
     def __init__(self, 
-                 xag_struct_encoder,  # Structural encoder (from DirectedGAE)
+                 struct_encoder,  # Structural encoder (from DirectedGAE)
                  num_rounds=1, 
                  dim_hidden=128, 
                  enable_encode=True,
@@ -31,7 +31,7 @@ class Model(nn.Module):
         super(Model, self).__init__()
         
         # 结构编码器 (来自 DirectedGAE)
-        self.xag_struct_encoder = xag_struct_encoder
+        self.xag_struct_encoder = struct_encoder
         self.decoder = DirectedInnerProductDecoder()
         self.hs_linear = nn.Linear(dim_hidden * 2, dim_hidden)
         self.hs_decompose = nn.Linear(dim_hidden, dim_hidden * 2)
@@ -63,12 +63,12 @@ class Model(nn.Module):
 
     def forward(self, G):
         device = next(self.parameters()).device
-        num_nodes = len(G.xag_gate)
-        num_layers_f = max(G.xag_forward_level).item() + 1
+        num_nodes = len(G.gate)
+        num_layers_f = max(G.forward_level).item() + 1
 
         # 使用结构编码器获得结构编码 s 和 t
-        x, edge_index = G.xag_x, G.xag_edge_index
-        one_hot = torch.nn.functional.one_hot(G.xag_x[:, 1].to(int), num_classes=6).to(device)
+        x, edge_index = G.x, G.edge_index
+        one_hot = torch.nn.functional.one_hot(G.x[:, 1].to(int), num_classes=6).to(device)
         s, t = self.xag_struct_encoder(one_hot, one_hot, edge_index)  # s 为结构信息，t 可用于后续重构
 
         # 初始化功能隐藏状态 hf (结构信息 s 不再更新)
@@ -78,16 +78,16 @@ class Model(nn.Module):
         node_state = torch.cat([hs, hf], dim=-1)
 
         # 掩码定义（门类型）
-        not_mask = G.xag_gate.squeeze(1) == 2  # NOT 门
-        and_mask = G.xag_gate.squeeze(1) == 3  # AND 门
-        xor_mask = G.xag_gate.squeeze(1) == 5  # XOR 门
+        not_mask = G.gate.squeeze(1) == 2  # NOT 门
+        and_mask = G.gate.squeeze(1) == 3  # AND 门
+        xor_mask = G.gate.squeeze(1) == 5  # XOR 门
 
         for _ in range(self.num_rounds):
             for level in range(1, num_layers_f):
-                layer_mask = G.xag_forward_level == level
+                layer_mask = G.forward_level == level
 
                 # AND Gate update
-                l_and_node = G.xag_forward_index[layer_mask & and_mask]
+                l_and_node = G.forward_index[layer_mask & and_mask]
                 if l_and_node.size(0) > 0:
                     and_edge_index, and_edge_attr = subgraph(l_and_node, edge_index, dim=1)
                     # 此处不更新结构状态，直接用结构编码 s 参与消息聚合
@@ -98,7 +98,7 @@ class Model(nn.Module):
                     hf[l_and_node, :] = hf_and.squeeze(0)
 
                 # NOT Gate update
-                l_not_node = G.xag_forward_index[layer_mask & not_mask]
+                l_not_node = G.forward_index[layer_mask & not_mask]
                 if l_not_node.size(0) > 0:
                     not_edge_index, not_edge_attr = subgraph(l_not_node, edge_index, dim=1)
                     msg = self.aggr_not_func(node_state, not_edge_index, not_edge_attr)
@@ -108,7 +108,7 @@ class Model(nn.Module):
                     hf[l_not_node, :] = hf_not.squeeze(0)
                 
                 # XOR Gate update
-                l_xor_node = G.xag_forward_index[layer_mask & xor_mask]
+                l_xor_node = G.forward_index[layer_mask & xor_mask]
                 if l_xor_node.size(0) > 0:
                     xor_edge_index, xor_edge_attr = subgraph(l_xor_node, edge_index, dim=1)
                     msg = self.aggr_xor_func(node_state, xor_edge_index, xor_edge_attr)

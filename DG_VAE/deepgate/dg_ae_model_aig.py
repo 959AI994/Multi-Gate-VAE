@@ -52,11 +52,12 @@ class Model(nn.Module):
     def forward(self, data):
         # 功能编码
         device = next(self.parameters()).device
-        num_nodes = len(x)
+        num_nodes = len(data.x)
         num_layers_f = max(data.forward_level).item() + 1
         # 结构编码
         x, edge_index = data.x, data.edge_index
-        s, t = self.struct_encoder(x, x, edge_index)
+        one_hot = torch.nn.functional.one_hot(G.x[:, 1].to(int), num_classes=5).to(device)
+        s, t = self.struct_encoder(one_hot, one_hot, edge_index)
         # 初始化功能隐藏状态
         hf = torch.zeros(num_nodes, self.dim_hidden).to(device)
         # 初始节点状态为结构信息和功能状态的拼接

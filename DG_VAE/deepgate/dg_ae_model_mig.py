@@ -32,7 +32,7 @@ class Model(nn.Module):
         super(Model, self).__init__()
         
         # 结构编码器 (来自 DirectedGAE)
-        self.struct_encoder = struct_encoder
+        self.mig_struct_encoder = struct_encoder
         self.decoder = DirectedInnerProductDecoder()
         self.hs_linear = nn.Linear(dim_hidden * 2, dim_hidden)
         self.hs_decompose = nn.Linear(dim_hidden, dim_hidden * 2)
@@ -68,8 +68,8 @@ class Model(nn.Module):
         
         # Initialize functional and structural states
         x, edge_index = G.x, G.edge_index
-        one_hot = torch.nn.functional.one_hot(G.x[:, 1], num_classes=5).to(device)
-        s, t = self.struct_encoder(one_hot, one_hot, edge_index)
+        one_hot = torch.nn.functional.one_hot(G.x[:, 1].to(int), num_classes=6).to(device)
+        s, t = self.mig_struct_encoder(one_hot, one_hot, edge_index)
 
         # Initialize functional hidden states
         hf = torch.zeros(num_nodes, self.dim_hidden, device=device)

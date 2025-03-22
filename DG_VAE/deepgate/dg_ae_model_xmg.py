@@ -34,7 +34,7 @@ class Model(nn.Module):
         super(Model, self).__init__()
         
         # 结构编码器 (来自 DirectedGAE)
-        self.struct_encoder = struct_encoder
+        self.xmg_struct_encoder = struct_encoder
         self.decoder = DirectedInnerProductDecoder()
         self.hs_linear = nn.Linear(dim_hidden * 2, dim_hidden)
         self.hs_decompose = nn.Linear(dim_hidden, dim_hidden * 2)
@@ -73,7 +73,7 @@ class Model(nn.Module):
 
         # 使用外部结构编码器获得结构编码 s（以及 t，可用于后续重构任务）
         x, edge_index = G.x, G.edge_index
-        one_hot = torch.nn.functional.one_hot(G.xmg_x[:, 1].to(int), num_classes=6).to(device)
+        one_hot = torch.nn.functional.one_hot(G.x[:, 1].to(int), num_classes=6).to(device)
         s, t = self.xmg_struct_encoder(one_hot, one_hot, edge_index)  # s 为结构信息，t 可用于后续重构
 
         # 初始化功能隐藏状态 hf（结构信息 s 保持不变）

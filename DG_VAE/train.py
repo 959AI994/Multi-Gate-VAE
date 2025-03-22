@@ -58,7 +58,7 @@ if __name__ == '__main__':
         model_class = model_map[args.type]
         model = model_class(
             struct_encoder=encoder,
-            num_rounds=args.num_rounds,
+            # num_rounds=args.num_rounds,
             dim_hidden=args.dim_hidden,
             enable_encode=True,
             enable_reverse=True

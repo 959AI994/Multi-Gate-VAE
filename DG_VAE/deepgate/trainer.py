@@ -138,9 +138,8 @@ class Trainer():
             
         # s, t = self.model.encode(u, v, batch.train_pos_edge_index)
         hs,hf = self.model(batch)
-        s, t = self.hs_decompose(hs).chunk(2, dim=-1)
 
-        loss, pred_bin, gt_bin = self.model.recon_loss(s, t, batch.train_pos_edge_index)
+        loss, pred_bin, gt_bin = self.model.recon_loss(hs, batch.train_pos_edge_index)
         
         # Variational
         if 'VAE' in self.args.model:
