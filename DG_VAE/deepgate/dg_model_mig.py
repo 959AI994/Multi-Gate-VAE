@@ -48,7 +48,7 @@ class Model(nn.Module):
 
         # Networks for aggregation and updating
         self.aggr_and_func = TFMlpAggr(self.dim_hidden * 2, self.dim_hidden)
-        self.aggr_not_func = TFMlpAggr(self.dim_hidden * 1, self.dim_hidden)
+        self.aggr_not_func = TFMlpAggr(self.dim_hidden * 2, self.dim_hidden)
         self.aggr_or_func = TFMlpAggr(self.dim_hidden * 2, self.dim_hidden)
         self.aggr_maj_func = TFMlpAggr(self.dim_hidden * 2, self.dim_hidden)
         
