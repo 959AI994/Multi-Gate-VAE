@@ -1,7 +1,6 @@
 # Resource
-This repository's code is an extension of the DG-VAE (written by stone) version code (with the addition of multimodal and func loss).(Notice:Structure:GCN+AE;Function:GNN)
-### DG-VAE
-location: https://github.com/zshi0616/DG_VAE （Using GCN+AE to update structure）
+This repository's code is an extension of the DG-VAE (written by stone) version code (with the addition of multimodal and func loss).
+
 ### Deepgate
 location: https://github.com/zshi0616/python-deepgate (Using GNN to update structure and function)
 
