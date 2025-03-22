@@ -34,7 +34,7 @@ if __name__ == '__main__':
     }
 
     print('[INFO] Parse Dataset')
-    dataset = deepgate.NpzParser(DATA_DIR, circuit_path, label_path)
+    dataset = deepgate.NpzParser(DATA_DIR, circuit_path, label_path,args.type)
     train_dataset, val_dataset = dataset.get_dataset()
     
     print('[INFO] Create Model')
