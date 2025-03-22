@@ -129,8 +129,6 @@ class Trainer():
             return False
         
     def run_batch(self, batch):
-        # 增强型split验证
-        # print(f"[流程验证] split前edge_index存在: {hasattr(batch, 'edge_index')}")
         # 执行边分割
         batch = general_train_test_split_edges(batch)
 
@@ -139,7 +137,8 @@ class Trainer():
         v = batch.x.clone()
             
         # s, t = self.model.encode(u, v, batch.train_pos_edge_index)
-        s,t,hf = self.model(batch)
+        hs,hf = self.model(batch)
+        s, t = self.hs_decompose(hs).chunk(2, dim=-1)
 
         loss, pred_bin, gt_bin = self.model.recon_loss(s, t, batch.train_pos_edge_index)
         
