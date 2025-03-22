@@ -23,12 +23,14 @@ MAX_LOGSTD = 10
 
 
 class IntegratedModel(nn.Module):
-    def __init__(self, struct_encoder, num_rounds=1, dim_hidden=128, enable_encode=True, enable_reverse=False):
+    def __init__(self, struct_encoder, num_rounds=1, dim_hidden=128, enable_encode=True, enable_reverse=True):
         super(IntegratedModel, self).__init__()
 
         # 结构编码器 (来自 DirectedGAE)
         self.struct_encoder = struct_encoder
         self.decoder = DirectedInnerProductDecoder()
+        self.hs_linear = nn.Linear(dim_hidden * 2, dim_hidden)
+        self.hs_decompose = nn.Linear(dim_hidden, dim_hidden * 2)
 
         # 功能编码器 
         self.num_rounds = num_rounds
@@ -39,7 +41,7 @@ class IntegratedModel(nn.Module):
 
         # 功能部分网络
         self.aggr_and_func = TFMlpAggr(self.dim_hidden * 2, self.dim_hidden)
-        self.aggr_not_func = TFMlpAggr(self.dim_hidden * 1, self.dim_hidden)
+        self.aggr_not_func = TFMlpAggr(self.dim_hidden * 2, self.dim_hidden)
         self.update_and_func = GRU(self.dim_hidden, self.dim_hidden)
         self.update_not_func = GRU(self.dim_hidden, self.dim_hidden)
 
@@ -48,50 +50,53 @@ class IntegratedModel(nn.Module):
                                 act_layer='relu')
 
     def forward(self, data):
-        # 结构编码
-        x, edge_index = data.x, data.edge_index
-        s, t = self.struct_encoder(x, x, edge_index)
-
         # 功能编码
         device = next(self.parameters()).device
         num_nodes = len(x)
         num_layers_f = max(data.forward_level).item() + 1
-        # num_layers_b = max(data.backward_level).item() + 1
-
+        # 结构编码
+        x, edge_index = data.x, data.edge_index
+        s, t = self.struct_encoder(x, x, edge_index)
         # 初始化功能隐藏状态
         hf = torch.zeros(num_nodes, self.dim_hidden).to(device)
-        node_state = torch.cat([s, hf], dim=-1) # TODO:review,将s作为功能部分输入
+        # 初始节点状态为结构信息和功能状态的拼接
+        hs = self.hs_linear(torch.cat([s, t], dim=-1))
+        node_state = torch.cat([hs, hf], dim=-1)
+
         and_mask = data.gate.squeeze(1) == 1
         not_mask = data.gate.squeeze(1) == 2
-        for level in range(1,num_layers_f):
-            layer_mask = data.forward_level == level
 
-            # AND Gate
-            l_and_node = data.forward_index[layer_mask & and_mask]
-            if l_and_node.size(0) > 0:
-                and_edge_index, and_edge_attr = subgraph(l_and_node, edge_index, dim=1)  # subgraph function is available
+        for _ in range(self.num_rounds):
+            for level in range(1,num_layers_f):
+                layer_mask = data.forward_level == level
 
-                # Update function hidden state
-                msg = self.aggr_and_func(node_state, and_edge_index, and_edge_attr)
-                and_msg = torch.index_select(msg, dim=0, index=l_and_node)
-                hf_and = torch.index_select(hf, dim=0, index=l_and_node)
-                _, hf_and = self.update_and_func(and_msg.unsqueeze(0), hf_and.unsqueeze(0))
-                hf[l_and_node, :] = hf_and.squeeze(0)
+                # AND Gate
+                l_and_node = data.forward_index[layer_mask & and_mask]
+                if l_and_node.size(0) > 0:
+                    and_edge_index, and_edge_attr = subgraph(l_and_node, edge_index, dim=1)  # subgraph function is available
 
-            # NOT Gate
-            l_not_node = data.forward_index[layer_mask & not_mask]
-            if l_not_node.size(0) > 0:
-                not_edge_index, not_edge_attr = subgraph(l_not_node, edge_index,dim=1)  # subgraph function is available
-                # Update function hidden state
-                msg = self.aggr_not_func(hf, not_edge_index, not_edge_attr) # 直接输入hf
-                not_msg = torch.index_select(msg, dim=0, index=l_not_node)
-                hf_not = torch.index_select(hf, dim=0, index=l_not_node)
-                _, hf_not = self.update_not_func(not_msg.unsqueeze(0), hf_not.unsqueeze(0))
-                hf[l_not_node, :] = hf_not.squeeze(0)
-            node_state = torch.cat([s, hf], dim=-1)
+                    # Update function hidden state
+                    msg = self.aggr_and_func(node_state, and_edge_index, and_edge_attr)
+                    and_msg = torch.index_select(msg, dim=0, index=l_and_node)
+                    hf_and = torch.index_select(hf, dim=0, index=l_and_node)
+                    _, hf_and = self.update_and_func(and_msg.unsqueeze(0), hf_and.unsqueeze(0))
+                    hf[l_and_node, :] = hf_and.squeeze(0)
+
+                # NOT Gate
+                l_not_node = data.forward_index[layer_mask & not_mask]
+                if l_not_node.size(0) > 0:
+                    not_edge_index, not_edge_attr = subgraph(l_not_node, edge_index,dim=1)  # subgraph function is available
+                    # Update function hidden state
+                    msg = self.aggr_not_func(node_state, not_edge_index, not_edge_attr) # 直接输入hf
+                    not_msg = torch.index_select(msg, dim=0, index=l_not_node)
+                    hf_not = torch.index_select(hf, dim=0, index=l_not_node)
+                    _, hf_not = self.update_not_func(not_msg.unsqueeze(0), hf_not.unsqueeze(0))
+                    hf[l_not_node, :] = hf_not.squeeze(0)
+                
+                node_state = torch.cat([hs, hf], dim=-1)
 
         # 返回结构编码 (s, t) 和功能编码 (hf)
-        return s, t, hf
+        return hs, hf
 
     def pred_prob(self, hf):
         """预测概率 (用于功能任务)"""
@@ -99,7 +104,8 @@ class IntegratedModel(nn.Module):
         prob = torch.clamp(prob, min=0.0, max=1.0)
         return prob
 
-    def recon_loss(self, s, t, pos_edge_index, neg_edge_index=None):
+    def recon_loss(self, hs, pos_edge_index, neg_edge_index=None):
+        s, t = self.hs_decompose(hs).chunk(2, dim=-1)
         pos_pred = self.decoder(s, t, pos_edge_index, sigmoid=True)
         pos_pred_bin = (pos_pred > 0.5).float()
         pos_gt = torch.ones_like(pos_pred)
