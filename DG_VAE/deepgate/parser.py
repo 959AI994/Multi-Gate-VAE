@@ -115,7 +115,8 @@ class NpzParser():
                     graph = parse_pyg_mlpgate(
                         x, edge_index, prob, tt_dis, tt_pair_index 
                     )
-                    graph.gate = torch.tensor(circuits[cir_name]['gate'])
+                    if self.circuit_type == 'aig':
+                        graph.gate = torch.tensor(circuits[cir_name]['gate'])
                     graph.name = cir_name
                     data_list.append(graph)
 
