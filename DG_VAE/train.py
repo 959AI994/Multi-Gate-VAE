@@ -49,7 +49,6 @@ if __name__ == '__main__':
             enable_reverse=True
         )
 
-    
     print('[INFO] Create Trainer')
     trainer = deepgate.Trainer(
         args, model, 

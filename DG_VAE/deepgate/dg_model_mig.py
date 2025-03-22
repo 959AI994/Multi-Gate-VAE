@@ -28,7 +28,7 @@ class Model(nn.Module):
                  num_rounds=1, 
                  dim_hidden=128, 
                  enable_encode=True,
-                 enable_reverse=False):
+                 enable_reverse=True):
         super(Model, self).__init__()
         
         # 结构编码器 (来自 DirectedGAE)
