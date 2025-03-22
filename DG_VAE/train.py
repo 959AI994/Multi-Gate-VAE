@@ -9,16 +9,30 @@ from config import get_parse_args
 import deepgate.digae_layer
 import deepgate.digae_model
 import deepgate.digvae_model
-import deepgate.model
+import deepgate.dg_ae_model_aig
+import deepgate.dg_ae_model_mig
+import deepgate.dg_ae_model_xag
+import deepgate.dg_ae_model_xmg
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
-DATA_DIR = '/home/xqgrp/wangjingxin/datasets/mixgate_data/4npz/aig_npz/'
 
 if __name__ == '__main__':
-    circuit_path = os.path.join(DATA_DIR, 'graphs.npz')
-    label_path = os.path.join(DATA_DIR, 'graphs.npz')
+
     args = get_parse_args()
+    DATA_DIR = f'/home/xqgrp/wangjingxin/datasets/mixgate_data/4npz/{args.type}_npz/'
+
+    circuit_path = os.path.join(DATA_DIR, 'graphs.npz')
+    # label_path = os.path.join(DATA_DIR, 'graphs.npz')
+    label_filename = 'graphs.npz' if args.type == 'aig' else 'labels.npz'
+    label_path = os.path.join(DATA_DIR, label_filename)
     
+    model_map = {
+        'aig': deepgate.dg_ae_model_aig.Model,
+        'mig': deepgate.dg_ae_model_mig.Model,
+        'xmg': deepgate.dg_ae_model_xmg.Model,
+        'xag': deepgate.dg_ae_model_xag.Model
+    }
+
     print('[INFO] Parse Dataset')
     dataset = deepgate.NpzParser(DATA_DIR, circuit_path, label_path)
     train_dataset, val_dataset = dataset.get_dataset()
@@ -41,13 +55,21 @@ if __name__ == '__main__':
         model = deepgate.digvae_model.DirectedGVAE(encoder, args.dim_hidden, decoder)
     else:
         # model = deepgate.digae_model.DirectedGAE(encoder, decoder)  #用这个作为整体的model
-        model = deepgate.model.IntegratedModel(
+        model_class = model_map[args.type]
+        model = model_class(
             struct_encoder=encoder,
-            # num_rounds=args.num_rounds,
+            num_rounds=args.num_rounds,
             dim_hidden=args.dim_hidden,
             enable_encode=True,
             enable_reverse=True
         )
+        # model = deepgate.dg_ae_model_aig.Model(
+        #     struct_encoder=encoder,
+        #     num_rounds=args.num_rounds,
+        #     dim_hidden=args.dim_hidden,
+        #     enable_encode=True,
+        #     enable_reverse=True
+        # )
 
     print('[INFO] Create Trainer')
     trainer = deepgate.Trainer(
