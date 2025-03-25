@@ -5,8 +5,7 @@ BATCH_SIZE=16
 TYPE=xag
 EPOCH=60
 
-# python train.py --exp_id $EXP_ID --model $MODEL --batch_size $BATCH_SIZE --num_epochs $EPOCH --layernorm  --type $TYPE
-torchrun --nproc_per_node=2 --master_port=29766 \
+CUDA_VISIBLE_DEVICES=6,7 torchrun --nproc_per_node=2 --master_port=29655 \
     train.py \
     --exp_id $EXP_ID \
     --model $MODEL \
@@ -14,5 +13,4 @@ torchrun --nproc_per_node=2 --master_port=29766 \
     --num_epochs $EPOCH \
     --layernorm \
     --type $TYPE \
-    --gpus 6,7 \
     --distributed

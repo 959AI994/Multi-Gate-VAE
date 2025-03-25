@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     args = get_parse_args()
 
-    DATA_DIR = f'/home/xqgrp/wangjingxin/datasets/mixgate_data/4npz/{args.type}_npz/'
+    DATA_DIR = f'/home/xqgrp/wangjingxin/datasets/mixgate_data/4npz_1500/{args.type}_npz/'
 
     circuit_path = os.path.join(DATA_DIR, 'graphs.npz')
     # label_path = os.path.join(DATA_DIR, 'graphs.npz')
@@ -66,22 +66,11 @@ if __name__ == '__main__':
             enable_encode=True,
             enable_reverse=True
         )
-        # model = deepgate.dg_ae_model_aig.Model(
-        #     struct_encoder=encoder,
-        #     num_rounds=args.num_rounds,
-        #     dim_hidden=args.dim_hidden,
-        #     enable_encode=True,
-        #     enable_reverse=True
-        # )
-
 
     trainer = deepgate.Trainer(
         args, model, 
         training_id = args.exp_id, batch_size=args.batch_size, 
-        distributed=args.distributed,
-        # distributed=False, device='cuda:0'
-        #  device=torch.device(f'cuda:{args.local_rank}')  # 使用 local_rank 指定设备
-        # device=torch.device(f'cuda:{os.environ.get("LOCAL_RANK", 0)}')  # ✅ 正确方式
+        distributed=True,
     )
     if args.resume:
         trainer.resume()

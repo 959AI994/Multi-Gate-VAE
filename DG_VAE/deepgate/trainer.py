@@ -24,7 +24,7 @@ class Trainer():
                  training_id = 'default',
                  save_dir = './exp', 
                  lr = 1e-4,
-                 prob_rc_func_weight = [3.0, 1.0, 2.0],
+                 rc_prob_func_weight = [1.0, 4.0, 2.0],
                  emb_dim = 128, 
                  device = 'cpu', 
                  batch_size=32, num_workers=0, 
@@ -37,7 +37,7 @@ class Trainer():
         self.device = device
         self.lr = lr
         self.lr_step = -1
-        self.prob_rc_func_weight = prob_rc_func_weight
+        self.rc_prob_func_weight = rc_prob_func_weight
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
         self.log_dir = os.path.join(save_dir, training_id)
@@ -225,7 +225,10 @@ class Trainer():
                     # Get loss
                     loss_status = self.run_batch(batch)
                     # loss = loss_status['recon_loss'] + loss_status['kl_loss']+loss_status['prob_loss']+loss_status['func_loss']
-                    loss = loss_status['recon_loss'] +loss_status['prob_loss']+loss_status['func_loss']
+                    # loss = loss_status['recon_loss'] +loss_status['prob_loss']+loss_status['func_loss']
+                    loss = (self.rc_prob_func_weight[0] * loss_status['recon_loss'] + 
+                            self.rc_prob_func_weight[1] * loss_status['prob_loss'] + 
+                            self.rc_prob_func_weight[2] * loss_status['func_loss'])
                     if phase == 'train':
                         loss.backward()
                     self.optimizer.step()

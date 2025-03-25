@@ -17,7 +17,7 @@ def get_parse_args():
     parser.add_argument('--layernorm', action='store_true', help='Enable layernorm')
     
     # Training
-    parser.add_argument('--gpus', default='0', help='-1 for CPU, use comma for multiple gpus')
+    # parser.add_argument('--gpus', default='0', help='-1 for CPU, use comma for multiple gpus')
     parser.add_argument('--type', type=str, required=True, choices=['aig', 'mig', 'xmg', 'xag'],help='Circuit type to train')
     parser.add_argument('--batch_size', type=int, default=4, help='Batch size')
     parser.add_argument('--num_epochs', type=int, default=60, help='Number of epochs')
