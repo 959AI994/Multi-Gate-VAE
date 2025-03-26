@@ -80,7 +80,7 @@ if __name__ == '__main__':
     # 三阶段训练配置
     stage_configs = [
         {'epochs': 100, 'weights': [1.0, 0.0, 0.0], 'lr': 1e-4},  # 阶段1: 仅rc_loss
-        {'epochs': 60, 'weights': [1.0, 4.0, 0.0], 'lr': 1e-4},  # 阶段2: rc_loss + prob_loss
+        {'epochs': 60, 'weights': [1.0, 5.0, 0.0], 'lr': 1e-4},  # 阶段2: rc_loss + prob_loss
         {'epochs': 60, 'weights': [1.0, 4.0, 4.0], 'lr': 1e-4}   # 阶段3: 全损失
     ]
 
