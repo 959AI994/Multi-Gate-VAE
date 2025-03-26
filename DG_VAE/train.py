@@ -67,12 +67,12 @@ if __name__ == '__main__':
             enable_reverse=True
         )
 
-    trainer = deepgate.EarlyTrainer(
+    trainer = deepgate.Trainer(
         args, model, 
         training_id = args.exp_id, batch_size=args.batch_size, 
-        distributed=True,
-        patience=10,  # 容忍10个epoch没有改善
-        delta=0.0002    # 损失改善需大于0.001
+        distributed=True
+        # patience=10,  # 容忍10个epoch没有改善
+        # delta=0.0002    # 损失改善需大于0.001
     )
     if args.resume:
         trainer.resume()

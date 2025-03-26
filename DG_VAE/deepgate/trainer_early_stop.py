@@ -1,3 +1,4 @@
+# ---------------------------------------------------------------------- 添加早停机制 -------------------------
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -92,7 +93,7 @@ class EarlyTrainer():
         
     def set_training_args(self, rc_prob_func_weight=[], lr=-1, lr_step=-1, device='null'):
         if len(rc_prob_func_weight) == 3 and rc_prob_func_weight != self.rc_prob_func_weight:
-            print('[INFO] Update prob_rc_func_weight from {} to {}'.format(self.rc_prob_func_weight, rc_prob_func_weight))
+            print('[INFO] Update rc_prob_func_weight from {} to {}'.format(self.rc_prob_func_weight, rc_prob_func_weight))
             self.rc_prob_func_weight = rc_prob_func_weight
         if lr > 0 and lr != self.lr:
             print('[INFO] Update learning rate from {} to {}'.format(self.lr, lr))
