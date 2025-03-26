@@ -17,7 +17,7 @@ from .utils.model_utils import load_model
 
 from .preprocessing import general_train_test_split_edges
 
-class Trainer():
+class EarlyTrainer():
     def __init__(self,
                  args, 
                  model, 
@@ -29,8 +29,10 @@ class Trainer():
                  device = 'cpu', 
                  batch_size=32, num_workers=0, 
                  distributed = True,
-                 ):
-        super(Trainer, self).__init__()
+                 # 新增早停参数 ↓
+                 patience=10, 
+                 delta=0.0002):
+        super(EarlyTrainer, self).__init__()
         # Config
         self.args = args
         self.emb_dim = emb_dim
@@ -46,6 +48,13 @@ class Trainer():
         # Log Path
         time_str = time.strftime('%Y-%m-%d-%H-%M')
         self.log_path = os.path.join(self.log_dir, 'log-{}.txt'.format(time_str))
+        
+        # 早停相关初始化 ↓
+        self.patience = patience
+        self.delta = delta
+        self.best_loss = float('inf')
+        self.early_stop_counter = 0
+        self.early_stop = False
         
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -83,7 +92,7 @@ class Trainer():
         
     def set_training_args(self, rc_prob_func_weight=[], lr=-1, lr_step=-1, device='null'):
         if len(rc_prob_func_weight) == 3 and rc_prob_func_weight != self.rc_prob_func_weight:
-            print('[INFO] Update rc_prob_func_weight from {} to {}'.format(self.rc_prob_func_weight, rc_prob_func_weight))
+            print('[INFO] Update prob_rc_func_weight from {} to {}'.format(self.rc_prob_func_weight, rc_prob_func_weight))
             self.rc_prob_func_weight = rc_prob_func_weight
         if lr > 0 and lr != self.lr:
             print('[INFO] Update learning rate from {} to {}'.format(self.lr, lr))
@@ -174,6 +183,11 @@ class Trainer():
         return loss_status
     
     def train(self, num_epoch, train_dataset, val_dataset):
+        # 初始化早停状态 ↓
+        self.early_stop = False
+        self.best_loss = float('inf')
+        self.early_stop_counter = 0
+        
         # Distribute Dataset
         if self.distributed:
             train_sampler = torch.utils.data.distributed.DistributedSampler(
@@ -197,15 +211,17 @@ class Trainer():
         # AverageMeter
         batch_time = AverageMeter()
         recon_loss_stats = AverageMeter()
-        # kl_loss_stats = AverageMeter()
         prob_loss_stats=AverageMeter()
         func_loss_stats=AverageMeter()
         acc_stats = AverageMeter()
         tp_stats, fp_stats, tn_stats, fn_stats = AverageMeter(), AverageMeter(), AverageMeter(), AverageMeter()
         
-        # Train
         print('[INFO] Start training, lr = {:.4f}'.format(self.optimizer.param_groups[0]['lr']))
         for epoch in range(num_epoch): 
+            if self.early_stop:  # 早停检查 ↓
+                print(f'[INFO] Early stopping at epoch {epoch}')
+                break
+                
             for phase in ['train', 'val']:
                 if phase == 'train':
                     dataset = train_dataset
@@ -224,8 +240,6 @@ class Trainer():
                     time_stamp = time.time()
                     # Get loss
                     loss_status = self.run_batch(batch)
-                    # loss = loss_status['recon_loss'] + loss_status['kl_loss']+loss_status['prob_loss']+loss_status['func_loss']
-                    # loss = loss_status['recon_loss'] +loss_status['prob_loss']+loss_status['func_loss']
                     loss = (self.rc_prob_func_weight[0] * loss_status['recon_loss'] + 
                             self.rc_prob_func_weight[1] * loss_status['prob_loss'] + 
                             self.rc_prob_func_weight[2] * loss_status['func_loss'])
@@ -267,12 +281,28 @@ class Trainer():
                         phase, epoch, num_epoch, recon_loss_stats.avg, acc_stats.avg*100, prob_loss_stats.avg,func_loss_stats.avg,batch_time.avg))
                     bar.finish()
             
-            # Learning rate decay
-            self.model_epoch += 1
-            if self.lr_step > 0 and self.model_epoch % self.lr_step == 0:
-                self.lr *= 0.1
-                if self.local_rank == 0:
-                    print('[INFO] Learning rate decay to {}'.format(self.lr))
-                for param_group in self.optimizer.param_groups:
-                    param_group['lr'] = self.lr
-            
+            # 验证阶段早停判断 ↓
+            if phase == 'val' and self.local_rank == 0:
+                current_val_loss = recon_loss_stats.avg + prob_loss_stats.avg + func_loss_stats.avg
+                    
+                if current_val_loss < self.best_loss - self.delta:
+                    self.best_loss = current_val_loss
+                    self.early_stop_counter = 0
+                    self.save(os.path.join(self.log_dir, 'model_best.pth'))  # 保存最佳模型
+                    print(f'[INFO] Validation loss improved to {self.best_loss:.4f}')
+                else:
+                    self.early_stop_counter += 1
+                    print(f'[INFO] Early stop counter: {self.early_stop_counter}/{self.patience}')
+                        
+                if self.early_stop_counter >= self.patience:
+                    self.early_stop = True
+                    # 分布式训练同步停止信号
+                    if self.distributed:
+                        stop_tensor = torch.tensor([1], device=self.device)
+                        torch.distributed.broadcast(stop_tensor, 0)
+                    break
+                else:
+                        # 同步继续训练信号
+                    if self.distributed:
+                        stop_tensor = torch.tensor([0], device=self.device)
+                        torch.distributed.broadcast(stop_tensor, 0)

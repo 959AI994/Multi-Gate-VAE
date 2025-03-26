@@ -67,15 +67,44 @@ if __name__ == '__main__':
             enable_reverse=True
         )
 
-    trainer = deepgate.Trainer(
+    trainer = deepgate.EarlyTrainer(
         args, model, 
         training_id = args.exp_id, batch_size=args.batch_size, 
         distributed=True,
+        patience=10,  # 容忍10个epoch没有改善
+        delta=0.0002    # 损失改善需大于0.001
     )
     if args.resume:
         trainer.resume()
-    trainer.set_training_args(lr=args.lr, lr_step=50)
-    trainer.train(args.num_epochs, train_dataset, val_dataset)
     
-    print()
+    # 三阶段训练配置
+    stage_configs = [
+        {'epochs': 100, 'weights': [1.0, 0.0, 0.0], 'lr': 1e-4},  # 阶段1: 仅rc_loss
+        {'epochs': 60, 'weights': [1.0, 4.0, 0.0], 'lr': 1e-4},  # 阶段2: rc_loss + prob_loss
+        {'epochs': 60, 'weights': [1.0, 4.0, 4.0], 'lr': 1e-4}   # 阶段3: 全损失
+    ]
+
+    for stage_idx, config in enumerate(stage_configs):
+        print(f'\n{"="*40}')
+        print(f'[STAGE {stage_idx+1}] Start Training')
+        print(f'|-- Epochs: {config["epochs"]}')
+        print(f'|-- Loss Weights: {config["weights"]}')
+        print(f'|-- Learning Rate: {config["lr"]}')
+        
+        # 设置当前阶段参数
+        trainer.set_training_args(
+            rc_prob_func_weight=config["weights"],
+            lr=config["lr"],
+            lr_step=50
+        )
+        # 执行阶段训练
+        trainer.train(config["epochs"], train_dataset, val_dataset)
+        # 保存阶段模型
+        if trainer.local_rank == 0:
+            trainer.save(os.path.join(trainer.log_dir, f'stage_{stage_idx+1}.pth'))
+
+    # trainer.set_training_args(lr=args.lr, lr_step=50)
+    # trainer.train(args.num_epochs, train_dataset, val_dataset)
+    
+    print('\n[INFO] All training stages completed!')
     

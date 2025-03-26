@@ -4,6 +4,7 @@ from .dg_ae_model_xmg import Model
 from .dg_ae_model_xag import Model
 
 from .trainer import Trainer
+from .trainer_early_stop import EarlyTrainer
 from .parser import *
 from .parser_func import *
 from .utils import *
